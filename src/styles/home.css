@@ -1,0 +1,150 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  color: #1a2332;
+  letter-spacing: -1px;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 1.7rem;
+}
+
+.cta-button {
+  display: inline-block;
+  background: #005f41;
+  color: white;
+  padding: 0.85rem 2.1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.18s;
+  text-decoration: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-top: 0.8rem;
+}
+
+.cta-button:hover, .cta-button:focus {
+  background: #008f5b;
+  color: white;
+}
+
+.dashboard {
+  margin-top: 2.5rem;
+}
+
+.dashboard-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #1a2332;
+  text-align: left;
+}
+
+.dashboard-loading,
+.dashboard-empty {
+  color: #444;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.dashboard-searchbar-container {
+  margin-bottom: 1.1rem;
+}
+.dashboard-searchbar {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.65rem 1.1rem;
+  color: #333;
+  font-size: 1.08rem;
+  border-radius: 6px;
+  border: 1px solid #d2d9e7;
+  background: #f7f9fc;
+  margin-bottom: 0.2rem;
+}
+.dashboard-searchbar:focus {
+  outline: 2px solid #7cddb8;
+  border-color: #7cddb8;
+  background: #fff;
+}
+
+.dashboard-boards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 0.6rem;
+}
+
+.board-card {
+  background: #fcfcfc;
+  border: 1px solid #e0e4ed;
+  border-radius: 8px;
+  box-shadow: 0 1.5px 8px rgba(10, 34, 55, 0.05);
+  padding: 1.2rem 1.1rem 1.1rem 1.1rem;
+  transition: box-shadow 0.15s, border 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+}
+
+.board-card:hover, .board-card:focus {
+  border: 1.5px solid #00a97f;
+  box-shadow: 0 4px 16px rgba(0, 169, 127, 0.10);
+  background: #f8fffa;
+  color: #005f41;
+}
+
+.board-card-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1a2332;
+  word-break: break-word;
+}
+
+.board-card-desc {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 0.7rem;
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.board-card-updated {
+  font-size: 0.92rem;
+  color: #888;
+  margin-top: auto;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+  }
+  .dashboard-boards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .hero {
+    margin-bottom: 1.2rem;
+  }
+  .title {
+    font-size: 2rem;
+  }
+}

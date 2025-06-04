@@ -1,0 +1,118 @@
+.board-layout {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.3rem;
+}
+
+.board-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a2332;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+}
+.mode-btn {
+  background: #f0f0f0;
+  border: none;
+  padding: 0.5rem 1.1rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.16s;
+}
+.mode-btn.active, .mode-btn:hover {
+  background: #005f41;
+  color: white;
+}
+
+.board-filters {
+  display: flex;
+  gap: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+.board-search {
+  flex: 1 1 300px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #d3d5db;
+  outline: none;
+}
+.board-filter-select {
+  padding: 0.5rem 0.9rem;
+  border-radius: 5px;
+  border: 1px solid #d3d5db;
+  background: #fafafa;
+}
+
+.board-main-content {
+  background: #fcfcfc;
+  border-radius: 8px;
+  padding: 1.5rem 1.2rem;
+  box-shadow: 0 1.5px 8px rgba(10, 34, 55, 0.04);
+}
+
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+.board-table th, .board-table td {
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid #e0e4ed;
+}
+.status.checked-in {
+  color: #008f5b;
+  font-weight: 600;
+}
+.status.not-checked-in {
+  color: #b40026;
+  font-weight: 500;
+}
+
+.board-checkin-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+}
+.checkin-card {
+  background: #ecf9f1;
+  border-radius: 7px;
+  padding: 1.2rem 1.5rem;
+  min-width: 160px;
+  box-shadow: 0 1px 6px rgba(0, 169, 127, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.checkin-card.checked-in {
+  background: #d4ffe6;
+  border: 1.5px solid #008f5b;
+}
+.checkin-name {
+  font-size: 1.13rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+.checkin-status {
+  font-size: 0.98rem;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .board-layout { padding: 1rem 0.2rem; }
+  .board-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .board-main-content { padding: 0.7rem 0.1rem; }
+  .board-checkin-view { flex-direction: column; gap: 0.7rem; }
+}

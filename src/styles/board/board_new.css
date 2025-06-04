@@ -1,0 +1,211 @@
+:root {
+  --background: #f8fafb;
+  --foreground: #1b1b1b;
+  --accent-green: #059669;
+  --accent-green-dark: #047857;
+  --section-bg: #ffffffee;
+  --shadow: 0 2px 24px rgba(0,0,0,0.09);
+}
+
+.board-new-main-bg {
+  min-height: 100vh;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+.board-new-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 1.1rem 2.2rem 1.1rem 2.2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.board-new-logo {
+  font-weight: 800;
+  font-size: 1.25rem;
+  text-decoration: none;
+  letter-spacing: -1px;
+  color: var(--accent-green-dark);
+}
+
+.board-new-flex {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4.5vh 0;
+  background: var(--background);
+}
+
+.board-new-form-card {
+  background: var(--section-bg);
+  box-shadow: var(--shadow);
+  border-radius: 20px;
+  max-width: 540px;
+  width: 100%;
+  padding: 2.8rem 2.4rem 2rem 2.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0 1rem;
+}
+
+.board-new-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 1.4rem 0;
+  color: var(--foreground);
+  letter-spacing: -1px;
+}
+
+.format-guide {
+  background: #f0fdf4;
+  color: #166534;
+  border-left: 5px solid var(--accent-green);
+  padding: 1em 1.3em;
+  border-radius: 12px;
+  margin-bottom: 1.1em;
+  font-size: 1.07rem;
+}
+
+.csv-example-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-green-dark));
+  border-radius: 6px;
+  padding: 0.23rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08);
+  border: none;
+  outline: none;
+  font-size: 1.015rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.csv-example-btn:hover,
+.csv-example-btn:focus {
+  background: linear-gradient(90deg, var(--accent-green-dark), var(--accent-green));
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.15);
+  color: #fff;
+}
+
+.login-btn {
+  background: var(--accent-green, #059669);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.16s;
+}
+
+.login-btn:hover,
+.login-btn:focus {
+  background: var(--accent-green-dark, #047857);
+  outline: none;
+}
+
+.file-upload-area {
+  display: flex;
+  align-items: center;
+  gap: .8em;
+}
+
+.file-upload-btn {
+  background: var(--accent-green, #059669);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .7em 1.5em;
+  font-size: 1.01rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.07);
+}
+
+.file-upload-btn:hover,
+.file-upload-btn:focus {
+  background: var(--accent-green-dark, #047857);
+  outline: none;
+}
+
+.file-name {
+  font-size: .99rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.or-divider {
+  text-align: center;
+  margin: 1.3em 0;
+  font-weight: bold;
+  letter-spacing: .06em;
+  color: #a3a3a3;
+  font-size: 1rem;
+}
+
+.csv-textarea {
+  width: 100%;
+  border-radius: 9px;
+  border: 1.5px solid #e0e7ef;
+  padding: 1em 1em;
+  font-size: 1.03rem;
+  color: #283347;
+  margin-bottom: 1.8em;
+  background: #f9fafb;
+  font-family: inherit;
+  transition: border-color 0.14s;
+}
+
+.csv-textarea:focus {
+  outline: none;
+  border-color: var(--accent-green, #059669);
+  background: #ebfbee;
+}
+
+.create-board-btn {
+  display: block;
+  width: 100%;
+  padding: 1em 0;
+  border-radius: 8px;
+  border: 0;
+  background: linear-gradient(90deg, var(--accent-green, #059669), var(--accent-green-dark, #047857));
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 0;
+  transition: background 0.17s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.07);
+  cursor: pointer;
+}
+
+.create-btn:hover,
+.create-btn:focus {
+  background: linear-gradient(90deg, var(--accent-green-dark, #047857), var(--accent-green, #059669));
+  transform: translateY(-1px) scale(1.03);
+  color: #fff;
+  outline: none;
+}
+
+.preview-note {
+  padding-top: 2rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+  text-align: center;
+}
+.import-preview-wrapper {
+  margin-top: 0;
+  margin-bottom: 2.5rem;
+}

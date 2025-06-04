@@ -1,0 +1,55 @@
+.floating-alert {
+  position: fixed;
+  top: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  min-width: 240px;
+  max-width: 90vw;
+  padding: 1em 2em;
+  border-radius: 999px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.12);
+  font-size: 1.04rem;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.3s cubic-bezier(.59,-0.2,.33,1.13),
+    transform 0.32s cubic-bezier(.59,-0.2,.33,1.13);
+}
+
+.floating-alert-in {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.floating-alert-out {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-30px) scale(0.98);
+}
+
+.floating-alert-info {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1.5px solid #38bdf8;
+}
+
+.floating-alert-success {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1.5px solid #4ade80;
+}
+
+.floating-alert-warning {
+  background: #fef9c3;
+  color: #b45309;
+  border: 1.5px solid #facc15;
+}
+
+.floating-alert-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1.5px solid #f87171;
+}
