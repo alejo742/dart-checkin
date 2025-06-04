@@ -170,7 +170,7 @@ export default function BoardTableView({
         </thead>
         <tbody>
           {filteredItems.map((item, index) => (
-            <tr key={item.id} className={item.checkedIn ? "row-checked" : ""}>
+            <tr key={index} className={item.checkedIn ? "row-checked" : ""}>
               <td>
                 <input
                   type="checkbox"
