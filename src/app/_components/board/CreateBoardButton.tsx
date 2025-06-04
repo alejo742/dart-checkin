@@ -1,27 +1,34 @@
-import { useCurrentUser } from "@/lib/user/useCurrentUser"; // or whatever hook you use
+import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import { createBoard } from "@/lib/boards";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function CreateBoardButton() {
+export default function CreateBoardButton({
+  parsedItems,
+  boardName,
+  description,
+}: {
+  parsedItems: any[];     // Array of {name, lastname, id, checked} etc.
+  boardName?: string;
+  description?: string;
+}) {
   const user = useCurrentUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!user) {
-      // Prompt login or show modal
       alert("You must be logged in to create a board.");
-      // Or trigger your login popup/modal here
       return;
     }
     setLoading(true);
     try {
       const docRef = await createBoard({
         ownerId: user.uid,
-        // Optionally: boardName, items, description
+        boardName,
+        items: parsedItems ?? [],
+        description,
       });
-      // Redirect to the new board page
       router.push(`/board/${docRef.id}`);
     } catch (err) {
       alert("Failed to create board: " + (err as Error).message);
@@ -30,10 +37,14 @@ export default function CreateBoardButton() {
     }
   };
 
-  if (!user) return null; // Hide button if not logged in
+  if (!user) return null;
 
   return (
-    <button className="create-board-btn" onClick={handleCreate} disabled={loading}>
+    <button
+      className="create-board-btn"
+      onClick={handleCreate}
+      disabled={loading || !parsedItems || parsedItems.length === 0}
+    >
       {loading ? "Creating..." : "Create Board"}
     </button>
   );

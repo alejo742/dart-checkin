@@ -81,6 +81,101 @@
   background: #fff;
 }
 
+/* Board card layout and actions */
+.board-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e9eff7;
+  border-radius: 10px;
+  padding: 1.1rem 1.3rem 1.1rem 1.3rem;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 2px 5px rgba(10,34,55,0.04);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.2rem;
+}
+.board-card-link {
+  flex: 1 1 auto;
+  text-decoration: none;
+  color: inherit;
+}
+.board-card-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+.board-card-desc {
+  color: #555;
+  margin-bottom: 0.6rem;
+}
+.board-card-updated {
+  color: #666;
+  font-size: 0.97rem;
+}
+.board-card-actions {
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 0.7rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.board-card-edit {
+  background: #e3f8f6;
+  color: #00897b;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 1.15rem;
+  font-size: 0.98rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  box-shadow: none;
+}
+.board-card-edit:hover,
+.board-card-edit:focus {
+  background: #b2f6ec;
+  color: #00695c;
+}
+.board-card-delete {
+  background: #ffebee;
+  color: #c62828;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 1.15rem;
+  font-size: 0.98rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.board-card-delete:hover,
+.board-card-delete:focus {
+  background: #ffcdd2;
+  color: #b71c1c;
+}
+.dashboard-boards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.dashboard-deleting-overlay {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(255,255,255,0.66);
+  color: #c62828;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+  pointer-events: all;
+}
+
 .dashboard-boards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

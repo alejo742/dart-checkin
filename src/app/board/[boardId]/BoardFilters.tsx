@@ -1,11 +1,9 @@
-"use client";
-import { useState } from "react";
-
-export default function BoardFilters() {
-  const [search, setSearch] = useState("");
-  // Simulate filters; replace with real filters as needed
-  const [filter, setFilter] = useState("all");
-
+// BoardFilters.tsx
+export default function BoardFilters({
+  search, filter, onSearch, onFilter
+}: {
+  search: string, filter: string, onSearch: (s: string) => void, onFilter: (f: string) => void
+}) {
   return (
     <div className="board-filters">
       <input
@@ -13,12 +11,12 @@ export default function BoardFilters() {
         type="text"
         placeholder="Search attendees/items..."
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={e => onSearch(e.target.value)}
       />
       <select
         className="board-filter-select"
         value={filter}
-        onChange={e => setFilter(e.target.value)}
+        onChange={e => onFilter(e.target.value)}
       >
         <option value="all">All</option>
         <option value="checkedin">Checked In</option>

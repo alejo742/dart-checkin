@@ -4,7 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import { useEffect, useState, useMemo } from "react";
-import { fetchBoards } from "@/lib/boards";
+import { fetchBoards, deleteBoard } from "@/lib/boards";
 import { Board } from "@/types/board";
 import "@/styles/home.css";
 
@@ -13,19 +13,45 @@ interface BoardCardProps {
   name: string;
   description?: string;
   updatedAt?: string;
+  onDelete?: (id: string) => void;
 }
 
-function BoardCard({ id, name, description, updatedAt }: BoardCardProps) {
+function BoardCard({ id, name, description, updatedAt, onDelete }: BoardCardProps) {
   return (
-    <Link href={`/boards/${id}`} className="board-card">
-      <div className="board-card-title">{name}</div>
-      {description && <div className="board-card-desc">{description}</div>}
-      {updatedAt && (
-        <div className="board-card-updated">
-          Last updated: {new Date(updatedAt).toLocaleString()}
-        </div>
-      )}
-    </Link>
+    <div className="board-card">
+      <Link href={`/board/${id}`} className="board-card-link">
+        <div className="board-card-title">{name}</div>
+        {description && <div className="board-card-desc">{description}</div>}
+        {updatedAt && (
+          <div className="board-card-updated">
+            Last updated: {new Date(updatedAt).toLocaleString()}
+          </div>
+        )}
+      </Link>
+      <div className="board-card-actions">
+        <Link
+          href={`/board/${id}`}
+          className="board-card-edit"
+          title="Edit board"
+          onClick={e => e.stopPropagation()}
+        >
+          Edit
+        </Link>
+        {onDelete && (
+          <button
+            className="board-card-delete"
+            title="Delete board"
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDelete(id);
+            }}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -34,6 +60,7 @@ export default function LandingPage() {
   const [boards, setBoards] = useState<BoardCardProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -58,6 +85,22 @@ export default function LandingPage() {
     };
     getBoards();
   }, [user]);
+
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this board? This action cannot be undone."
+    );
+    if (!confirmDelete) return;
+    setDeletingId(id);
+    try {
+      await deleteBoard(id);
+      setBoards((prev) => prev.filter((b) => b.id !== id));
+    } catch (error) {
+      alert("Failed to delete the board. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   // Filter boards by search (matches name or ANY substring in updatedAt's local string)
   const filteredBoards = useMemo(() => {
@@ -108,8 +151,17 @@ export default function LandingPage() {
             ) : (
               <div className="dashboard-boards">
                 {filteredBoards.map((b) => (
-                  <BoardCard key={b.id} {...b} />
+                  <BoardCard
+                    key={b.id}
+                    {...b}
+                    onDelete={handleDelete}
+                  />
                 ))}
+              </div>
+            )}
+            {deletingId && (
+              <div className="dashboard-deleting-overlay">
+                Deleting board...
               </div>
             )}
           </section>

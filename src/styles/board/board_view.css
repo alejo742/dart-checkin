@@ -1,3 +1,8 @@
+body {
+    background-color: #f0f4f8;
+    color: #333;
+}
+
 .board-layout {
   max-width: 900px;
   margin: 0 auto;
@@ -47,13 +52,20 @@
   font-size: 1rem;
   border-radius: 5px;
   border: 1px solid #d3d5db;
+  background-color: #fff;
+  color: #333;
   outline: none;
+}
+.board-search:focus {
+  border-color: #008f5b;
+  box-shadow: 0 0 0 2px rgba(0, 143, 91, 0.2);
 }
 .board-filter-select {
   padding: 0.5rem 0.9rem;
   border-radius: 5px;
   border: 1px solid #d3d5db;
   background: #fafafa;
+  color: #333;
 }
 
 .board-main-content {
@@ -115,4 +127,136 @@
   .board-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .board-main-content { padding: 0.7rem 0.1rem; }
   .board-checkin-view { flex-direction: column; gap: 0.7rem; }
+}
+
+.board-table-container {
+  background: #f8fbff;
+  border-radius: 12px;
+  box-shadow: 0 1.5px 8px rgba(10, 34, 55, 0.07);
+  padding: 2.2rem 1.5rem 2.2rem 1.5rem;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.board-table-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.1rem;
+}
+
+.board-title-spreadsheet {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  transition: color 0.16s;
+}
+.board-title-spreadsheet:hover {
+  color: #00897b;
+}
+.edit-icon {
+  font-size: 1.15rem;
+  color: #6a7990;
+  margin-left: 0.3rem;
+  transition: color 0.18s;
+}
+.board-title-spreadsheet:hover .edit-icon {
+  color: #009688;
+}
+.board-edit-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1.5px solid #b2e6d4;
+  color: #1a2332;
+  width: 100%;
+  max-width: 440px;
+  background: #f7fefc;
+  outline: none;
+  margin-bottom: 0.3rem;
+}
+
+.spreadsheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0.5px 4px rgba(10, 34, 55, 0.04);
+  font-size: 1.07rem;
+}
+
+.spreadsheet-table th, .spreadsheet-table td {
+  padding: 0.7rem 0.7rem;
+  border-bottom: 1.5px solid #ecf2f8;
+  text-align: left;
+}
+
+.spreadsheet-table th {
+  color: #455a64;
+  background: #f4f7fa;
+  font-size: 1.07rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  user-select: none;
+}
+
+.spreadsheet-table tr:last-child td {
+  border-bottom: none;
+}
+
+.spreadsheet-cell-input {
+  border: 1.2px solid #dff7ef;
+  border-radius: 5px;
+  background: #f8fcfa;
+  padding: 0.4rem 0.6rem;
+  width: 100%;
+  font-size: 1.05rem;
+  transition: border 0.13s, box-shadow 0.13s;
+  color: #1a2332;
+  outline: none;
+}
+.spreadsheet-cell-input:focus {
+  border: 1.6px solid #00b386;
+  background: #fff;
+  box-shadow: 0 0 0 2px #a7f3d0bb;
+}
+input[type="checkbox"] {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+input[type="checkbox"]:hover {
+    transform: scale(1.05);
+}
+
+.status-green {
+  color: #0b8132;
+  font-weight: 600;
+  font-size: 1.06rem;
+}
+.status-red {
+  color: #b40026;
+  font-weight: 600;
+  font-size: 1.06rem;
+}
+.row-checked {
+  background: #e9fbe6;
+  transition: background 0.15s;
+}
+.spreadsheet-table tr:hover {
+  background: #e3f7fa;
+}
+
+@media (max-width: 600px) {
+  .board-table-container { padding: 1.2rem 0.2rem; }
+  .spreadsheet-table th, .spreadsheet-table td { padding: 0.4rem 0.3rem; }
+  .board-title-spreadsheet, .board-edit-title { font-size: 1.18rem; }
 }

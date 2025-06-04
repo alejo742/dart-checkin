@@ -18,6 +18,8 @@ export default function BoardNewPage() {
   const [fileName, setFileName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPreviewAlert, setShowPreviewAlert] = useState(false);
+  const [boardName, setBoardName] = useState("");
+  const [description, setDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Run normalization whenever csvText changes
@@ -98,14 +100,16 @@ export default function BoardNewPage() {
     setCsvText(SAMPLE_CSV);
   };
 
-  // For now, stub for "Create Board"
-  const handleCreateBoard = () => {
-    if (!csvText.trim()) {
-      alert("Please upload or paste CSV data first.");
-      return;
-    }
-    alert("Board creation is not implemented in this stub.");
-  };
+  // Prepare the attendee items for creation
+  // After importResult
+  const parsedItems = (importResult?.rows || []).map((item: any) => ({
+    name: item.Name || item.name || "",
+    lastname: item.Lastname || item.lastname || "",
+    id: item.ID || item.id || "",
+    checked: typeof item.Check === "string"
+      ? item.Check.toLowerCase() === "true" || item.Check === "1" || item.Check === "yes"
+      : !!item.checked,
+  }));
 
   return (
     <main className="board-new-main-bg">
@@ -158,10 +162,49 @@ export default function BoardNewPage() {
             spellCheck={false}
           />
 
+          {/* Board Name Input */}
+          <div className="board-form-row">
+            <label htmlFor="board-name-input" className="board-form-label">
+              Board Name
+            </label>
+            <input
+              id="board-name-input"
+              type="text"
+              className="board-form-input"
+              placeholder="Event board name (e.g. Winter Carnival)"
+              value={boardName}
+              onChange={e => setBoardName(e.target.value)}
+              maxLength={70}
+              required
+              autoFocus
+            />
+          </div>
+
+          {/* Description Input */}
+          <div className="board-form-row">
+            <label htmlFor="board-desc-input" className="board-form-label">
+              Description <span className="board-form-optional">(optional)</span>
+            </label>
+            <input
+              id="board-desc-input"
+              type="text"
+              className="board-form-input"
+              placeholder="Short description (optional)"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              maxLength={120}
+            />
+          </div>
+
+
           {/* Button to create */}
-          <CreateBoardButton />
+          <CreateBoardButton
+            parsedItems={parsedItems}
+            boardName={boardName}
+            description={description}
+          />
           
-          { importResult && (
+          {importResult && (
             <p className="preview-note">
               You can modify this later. Click "Create Board" to finalize your import.
             </p> 

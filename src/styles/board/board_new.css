@@ -5,6 +5,8 @@
   --accent-green-dark: #047857;
   --section-bg: #ffffffee;
   --shadow: 0 2px 24px rgba(0,0,0,0.09);
+  --error: #be123c;
+  --border: #e0e7ef;
 }
 
 .board-new-main-bg {
@@ -59,6 +61,45 @@
   margin: 0 0 1.4rem 0;
   color: var(--foreground);
   letter-spacing: -1px;
+}
+
+/* Unified form row for all fields */
+.board-form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.2rem;
+}
+
+.board-form-label {
+  font-size: 1.07rem;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+}
+
+.board-form-optional {
+  color: #64748b;
+  font-weight: 400;
+  font-size: 0.99em;
+  margin-left: 0.5em;
+}
+
+.board-form-input {
+  padding: 0.78em 1em;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #f9fafb;
+  font-size: 1.04rem;
+  color: #283347;
+  outline: none;
+  font-family: inherit;
+  transition: border 0.13s, background 0.13s;
+}
+
+.board-form-input:focus {
+  border-color: var(--accent-green);
+  background: #ebfbee;
 }
 
 .format-guide {
@@ -118,6 +159,7 @@
   display: flex;
   align-items: center;
   gap: .8em;
+  margin-bottom: 0.7em;
 }
 
 .file-upload-btn {
@@ -157,7 +199,7 @@
 .csv-textarea {
   width: 100%;
   border-radius: 9px;
-  border: 1.5px solid #e0e7ef;
+  border: 1.5px solid var(--border);
   padding: 1em 1em;
   font-size: 1.03rem;
   color: #283347;
@@ -165,6 +207,8 @@
   background: #f9fafb;
   font-family: inherit;
   transition: border-color 0.14s;
+  min-height: 9em;
+  resize: vertical;
 }
 
 .csv-textarea:focus {
@@ -189,8 +233,14 @@
   cursor: pointer;
 }
 
-.create-btn:hover,
-.create-btn:focus {
+.create-board-btn:disabled {
+  background: #e0e7ef;
+  color: #a3a3a3;
+  cursor: not-allowed;
+}
+
+.create-board-btn:hover,
+.create-board-btn:focus {
   background: linear-gradient(90deg, var(--accent-green-dark, #047857), var(--accent-green, #059669));
   transform: translateY(-1px) scale(1.03);
   color: #fff;
@@ -208,4 +258,20 @@
 .import-preview-wrapper {
   margin-top: 0;
   margin-bottom: 2.5rem;
+}
+
+@media (max-width: 720px) {
+  .board-new-form-card {
+    padding: 1.4rem 0.7rem 1.1rem 0.7rem;
+  }
+  .board-new-title {
+    font-size: 1.32rem;
+  }
+  .format-guide {
+    font-size: 0.98rem;
+    padding: 0.7em 0.6em;
+  }
+  .board-form-row {
+    margin-bottom: 0.83rem;
+  }
 }

@@ -6,10 +6,12 @@ import {
   query,
   where,
   getDocs,
-  Timestamp,
+  getDoc,
   DocumentReference,
   orderBy, 
-  limit
+  limit,
+  deleteDoc,
+  doc
 } from "firebase/firestore";
 import { Board, BoardFilters } from "@/types/board";
 
@@ -122,4 +124,40 @@ export async function fetchBoards(
       items: data.items
     } as Board;
   });
+}
+
+/**
+ * Fetch a single board by its document ID.
+ * @param boardId The Firestore document ID of the board to fetch.
+ * @returns The board object or null if not found.
+ */
+export async function fetchBoardById(boardId: string): Promise<Board | null> {
+  if (!boardId) throw new Error("No board ID provided.");
+  const ref = doc(db, "boards", boardId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  const data = snap.data();
+
+  return {
+    id: snap.id,
+    name: data.name,
+    description: data.description,
+    ownerId: data.ownerId,
+    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
+    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : undefined,
+    items: data.items,
+    ...data,
+  } as Board;
+}
+
+
+
+/**
+ * Deletes a board by its document ID.
+ * @param boardId The Firestore document ID of the board to delete.
+ * @returns A promise that resolves when the board is deleted.
+ */
+export async function deleteBoard(boardId: string): Promise<void> {
+  if (!boardId) throw new Error("No board ID provided.");
+  await deleteDoc(doc(db, "boards", boardId));
 }
