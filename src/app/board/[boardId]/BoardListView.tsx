@@ -12,14 +12,14 @@ export default function BoardListView({ items }: { items: any[] }) {
       <tbody>
         {items.map(item =>
           <tr key={item.id}>
-            <td>{item.name}</td>
-            <td>{item.lastname ?? ""}</td>
-            <td>{item.id}</td>
+            <td style={{textAlign: "center"}}>{item.name}</td>
+            <td style={{textAlign: "center"}}>{item.lastname ?? ""}</td>
+            <td style={{textAlign: "center"}}>{item.id}</td>
             <td>
               {item.checkedIn ? (
-                <span className="status checked-in">Checked In</span>
+                <span className="status checked-in" style={{textAlign: "center"}}>Checked In</span>
               ) : (
-                <span className="status not-checked-in">Not Checked In</span>
+                <span className="status not-checked-in" style={{textAlign: "center"}}>Not Checked In</span>
               )}
             </td>
           </tr>

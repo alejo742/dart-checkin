@@ -41,7 +41,7 @@
 .login-btn.google:hover,
 .login-btn.google:focus {
   border-color: #059669;
-  color: #ddd;
+  background-color: #b8dacf;
   box-shadow: 0 2px 12px rgba(30, 41, 59, 0.14);
 }
 

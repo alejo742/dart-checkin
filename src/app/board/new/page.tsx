@@ -8,9 +8,10 @@ import LoadingModal from "@/components/LoadingModal";
 import AuthButton from "@/app/_components/AuthButton";
 import Navbar from "@/components/Navbar";
 import CreateBoardButton from "@/app/_components/board/CreateBoardButton";
+import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import "@/styles/board/board_new.css";
 
-const SAMPLE_CSV = `Alejandro Manrique f0875xx, Shawn Montreal f0071xx, \nPatty O'Connor f0002xx`;
+const SAMPLE_CSV = `Alejandro,Manrique,f0079rn\nPatricia,Increible,f88ands`;
 
 export default function BoardNewPage() {
   const [csvText, setCsvText] = useState("");
@@ -20,6 +21,7 @@ export default function BoardNewPage() {
   const [showPreviewAlert, setShowPreviewAlert] = useState(false);
   const [boardName, setBoardName] = useState("");
   const [description, setDescription] = useState("");
+  const user = useCurrentUser();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Run normalization whenever csvText changes
@@ -118,6 +120,7 @@ export default function BoardNewPage() {
       )}
       <Navbar right={<AuthButton/>} />
       <section className="board-new-flex">
+        { user && (
         <div className="board-new-form-card">
           <h2 className="board-new-title">
             Create a New Board
@@ -216,6 +219,12 @@ export default function BoardNewPage() {
             </div>
           )}
         </div>
+        )}
+        {!user && (
+          <p className="preview-note">
+            To create a board, you must log in first.
+          </p>
+        )}
       </section>
       {showPreviewAlert && (
         <FloatingAlert

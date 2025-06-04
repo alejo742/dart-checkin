@@ -37,13 +37,10 @@ export default function CreateBoardButton({
     }
   };
 
-  if (!user) return null;
-
   return (
     <button
       className="create-board-btn"
       onClick={handleCreate}
-      disabled={loading || !parsedItems || parsedItems.length === 0}
     >
       {loading ? "Creating..." : "Create Board"}
     </button>

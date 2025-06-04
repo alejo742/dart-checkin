@@ -11,6 +11,7 @@ import {
   orderBy, 
   limit,
   deleteDoc,
+  updateDoc,
   doc
 } from "firebase/firestore";
 import { Board, BoardFilters } from "@/types/board";
@@ -150,7 +151,27 @@ export async function fetchBoardById(boardId: string): Promise<Board | null> {
   } as Board;
 }
 
+/**
+ * Updates a board in Firestore by its ID.
+ * 
+ * @param boardId - Firestore document ID of the board
+ * @param boardUpdate - The updated board data (can be partial)
+ * @returns Promise<void>
+ */
+export async function updateBoardById(
+  boardId: string,
+  boardUpdate: Partial<Board>
+): Promise<void> {
+  if (!boardId) throw new Error("No board ID provided.");
 
+  const boardRef = doc(db, "boards", boardId);
+  
+  // Always update 'updatedAt'
+  await updateDoc(boardRef, {
+    ...boardUpdate,
+    updatedAt: serverTimestamp(),
+  });
+}
 
 /**
  * Deletes a board by its document ID.

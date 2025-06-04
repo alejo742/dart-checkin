@@ -1,104 +1,108 @@
+import Papa from "papaparse";
+
 export interface NormalizedImportResult {
   columns: string[];
   rows: Record<string, string>[];
 }
 
-// Heuristic helpers
-function isNumberLike(value: string) {
-  return /^[\d\- ]+$/.test(value.trim());
-}
-function looksLikeID(value: string) {
-  // At least one word in the value is alphanumeric with a digit (e.g. "f0079rn", "12345")
-  return value.trim().split(/\s+/).some((word) => /\d/.test(word));
-}
-function hasTwoWords(value: string) {
-  return value.trim().split(/\s+/).length === 2;
-}
-function splitNameAndId(value: string): { name: string; lastname: string; id: string } {
-  const parts = value.trim().split(/\s+/);
-  let id = "";
-  // Find the last part that contains a digit and treat as ID
-  let idIdx = -1;
-  for (let i = parts.length - 1; i >= 0; i--) {
-    if (/\d/.test(parts[i])) {
-      idIdx = i;
-      id = parts[i];
-      break;
-    }
-  }
-  if (idIdx === -1) {
-    // No ID found
-    if (parts.length === 2) return { name: parts[0], lastname: parts[1], id: "" };
-    if (parts.length === 1) return { name: parts[0], lastname: "", id: "" };
-    return { name: value.trim(), lastname: "", id: "" };
-  } else {
-    // ID found, rest are name/lastname
-    const nameParts = parts.slice(0, idIdx);
-    if (nameParts.length === 2) return { name: nameParts[0], lastname: nameParts[1], id };
-    if (nameParts.length === 1) return { name: nameParts[0], lastname: "", id };
-    return { name: nameParts.join(" "), lastname: "", id };
-  }
-}
-
-export function normalizeFlexibleInput(input: string): NormalizedImportResult {
-  let columns: string[] = [];
-  let rows: Record<string, string>[] = [];
-
-  // 1. Replace all line breaks with spaces (treat as one line)
-  // 2. Then split by commas as the only separator
-  // 3. Trim and remove empty items
-  const items = input
-    .replace(/[\r\n]+/g, ' ')
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-  // Heuristic: if all items are IDs (each item is only one word and contains a number)
-  if (items.length && items.every((v) => v.split(/\s+/).length === 1 && looksLikeID(v))) {
-    columns = ["Check", "ID"];
-    rows = items.map((id) => ({ Check: "", ID: id }));
-    return { columns, rows };
-  }
-
-  // If all items look like "Firstname Lastname"
-  if (items.length && items.every((v) => hasTwoWords(v) && !looksLikeID(v))) {
-    columns = ["Check", "Name", "Lastname"];
-    rows = items.map((full) => {
-      const [name, lastname] = full.trim().split(/\s+/, 2);
-      return { Check: "", Name: name, Lastname: lastname };
-    });
-    return { columns, rows };
-  }
-
-  // If items are a mix of names and/or IDs, possibly attached at the end
-  columns = ["Check"];
-  let hasName = false, hasLastname = false, hasID = false;
-  const parsedRows: Record<string, string>[] = items.map((v) => {
-    const parts = v.trim().split(/\s+/);
-    if (parts.length === 1 && looksLikeID(parts[0])) {
-      hasID = true;
-      return { ID: v };
-    } else {
-      const { name, lastname, id } = splitNameAndId(v);
-      if (name) hasName = true;
-      if (lastname) hasLastname = true;
-      if (id) hasID = true;
-      const row: Record<string, string> = {};
-      if (name) row["Name"] = name;
-      if (lastname) row["Lastname"] = lastname;
-      if (id) row["ID"] = id;
-      return row;
-    }
+/**
+ * Parses CSV text into rows. Returns an array of arrays of strings.
+ * Skips empty lines.
+ */
+export function parseCsv(text: string): string[][] {
+  const result = Papa.parse<string[]>(text, {
+    skipEmptyLines: true,
+    dynamicTyping: false,
+    delimiter: undefined, // auto-detect
   });
-  if (hasName) columns.push("Name");
-  if (hasLastname) columns.push("Lastname");
-  if (hasID) columns.push("ID");
-  rows = parsedRows.map((r) => {
-    const row: Record<string, string> = { Check: "" };
-    columns.forEach((col) => {
-      if (col !== "Check") row[col] = ((r as Record<string, string>)[col] ?? "");
+  // PapaParse returns result.data as (string | undefined)[][]
+  // We'll coerce undefined to empty string for safety
+  return (result.data as (string | undefined)[][]).map(row =>
+    row.map(cell => cell ?? "")
+  );
+}
+
+/**
+ * Normalize a flexible input (CSV) to {columns, rows}.
+ * Handles:
+ * 1. CSV with headers (columns inferred from first row if non-numeric).
+ * 2. CSV without headers (guesses columns: Name, Lastname, ID).
+ * 3. Single-line comma-separated input (Alejandro,Manrique,f0079rn,...).
+ */
+export function normalizeFlexibleInput(input: string): NormalizedImportResult {
+  // Use PapaParse to split into rows/columns
+  let rowsArr = parseCsv(input);
+  // Remove any rows that are fully empty
+  rowsArr = rowsArr.filter(row => row.some(cell => cell.trim().length > 0));
+
+  if (rowsArr.length === 0) {
+    return { columns: [], rows: [] };
+  }
+
+  // Heuristic: If the first row is ["Alejandro", "Manrique", "f0079rn"]
+  // and the second is similar, treat as no header and guess columns.
+
+  // If only one row and >2 columns, treat as a single "list" row
+  if (rowsArr.length === 1 && rowsArr[0].length > 2) {
+    // Try to chunk into triplets: Name, Lastname, ID
+    const triplets = [];
+    for (let i = 0; i < rowsArr[0].length; i += 3) {
+      triplets.push(rowsArr[0].slice(i, i + 3));
+    }
+    rowsArr = triplets;
+  }
+
+  // Guess columns if not present
+  let columns: string[] = [];
+  let dataRows: string[][] = [];
+
+  // Detect header: if first row has ANY cell with non-alpha chars or "Name"/"Lastname"/"ID"
+  const firstRow = rowsArr[0].map(s => s.trim());
+  const isHeader =
+    firstRow.some(cell => /name|last\s*name|id/i.test(cell)) ||
+    firstRow.some(cell => cell === "Check") ||
+    // If all values are non-numeric, likely header
+    firstRow.every(cell => /^[a-zA-Z\s]+$/.test(cell) && cell.length > 0);
+
+  if (isHeader) {
+    columns = firstRow;
+    dataRows = rowsArr.slice(1);
+  } else {
+    // Guess number of columns
+    const maxLen = Math.max(...rowsArr.map(row => row.length));
+    if (maxLen === 3) {
+      columns = ["Name", "Lastname", "ID"];
+    } else if (maxLen === 2) {
+      columns = ["Name", "ID"];
+    } else if (maxLen === 1) {
+      columns = ["ID"];
+    } else {
+      // Fallback: Name, Lastname, ID, Extra1, Extra2...
+      columns = Array.from({ length: maxLen }, (_, i) =>
+        ["Name", "Lastname", "ID"][i] || `Field${i + 1}`
+      );
+    }
+    dataRows = rowsArr;
+  }
+
+  // Always prepend "Check" as first column
+  if (!columns.includes("Check")) columns = ["Check", ...columns];
+
+  // Build normalized rows
+  const normalizedRows: Record<string, string>[] = dataRows.map(rawRow => {
+    const row: Record<string, string> = {};
+    columns.forEach((col, idx) => {
+      if (col === "Check") {
+        row[col] = "";
+        return;
+      }
+      row[col] = (rawRow[idx - 1] ?? "").trim(); // idx-1 because of Check
     });
     return row;
   });
-  return { columns, rows };
+
+  return {
+    columns,
+    rows: normalizedRows,
+  };
 }

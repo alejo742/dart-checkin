@@ -6,6 +6,7 @@ import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import { useEffect, useState, useMemo } from "react";
 import { fetchBoards, deleteBoard } from "@/lib/boards";
 import { Board } from "@/types/board";
+import AuthButton from "./_components/AuthButton";
 import "@/styles/home.css";
 
 interface BoardCardProps {
@@ -117,7 +118,7 @@ export default function LandingPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar right={ <AuthButton/> } />
       <main className="container">
         <section className="hero">
           <h1 className="title">Dartmouth Event Check-In</h1>
