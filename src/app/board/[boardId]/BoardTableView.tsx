@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { nanoid } from "nanoid";
 
 interface Person {
+  uid: string; // for row identification
   id: string | number;
   name: string;
   lastname?: string;
@@ -28,6 +30,7 @@ export default function BoardTableView({
 }: Props) {
   const [boardName, setBoardName] = useState(boardNameInitial);
   const [boardNameEditing, setBoardNameEditing] = useState(false);
+  const [editingRowUid, setEditingRowUid] = useState<string | null>(null);
   const [items, setItems] = useState(itemsInitial);
 
   // Sync props to state if they change
@@ -40,6 +43,7 @@ export default function BoardTableView({
 
   // Filtering logic (moved from parent)
   const filteredItems = items.filter(item => {
+    if (item.uid === editingRowUid) return true; // Always show the row being edited
     const matchSearch =
       (item.name?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
       (item.lastname?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
@@ -53,28 +57,30 @@ export default function BoardTableView({
     return matchSearch && matchFilter;
   });
 
-  const handleNameChange = (id: string | number, name: string) => {
+  const handleNameChange = (uid: string | number, name: string) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, name } : item))
+      prev.map((item) => (item.uid === uid ? { ...item, name } : item))
     );
   };
 
-  const handleLastNameChange = (id: string | number, lastname: string) => {
+  const handleLastNameChange = (uid: string | number, lastname: string) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, lastname } : item))
+      prev.map((item) => (item.uid === uid ? { ...item, lastname } : item))
     );
   };
 
-  const handleIdChange = (id: string | number, newId: string) => {
+  const handleIdChange = (uid: string | number, newId: string) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, id: newId } : item))
+      prev.map((item) => (item.uid === uid ? { ...item, id: newId } : item))
     );
   };
 
-  const handleCheckinChange = (id: string | number, checkedIn: boolean) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, checkedIn } : item))
+  const handleCheckinChange = (uid: string | number, checkedIn: boolean) => {
+    const updatedItems = items.map((item) =>
+      item.uid === uid ? { ...item, checkedIn } : item
     );
+    setItems(updatedItems);
+    if (onSave) onSave(boardName, updatedItems);
   };
 
   const handleBoardNameBlur = () => {
@@ -83,15 +89,18 @@ export default function BoardTableView({
   };
 
   const handleCellBlur = () => {
+    // filtering returns 
+    setEditingRowUid(null);
+
     if (onSave) onSave(boardName, items);
   };
 
   // --- Add Row Functionality ---
   const handleAddRow = () => {
-    // Generate a unique id (timestamp + random)
-    const newId = `f${Math.floor(Math.random() * 10000)}`;
-    const newRow: Person = {
-      id: newId,
+    // Generate a unique uid for the row
+    const newRow: Person & { uid: string } = {
+      uid: nanoid(),
+      id: "",
       name: "",
       lastname: "",
       checkedIn: false,
@@ -102,8 +111,8 @@ export default function BoardTableView({
   };
 
   // --- Remove Row Functionality ---
-  const handleRemoveRow = (id: string | number) => {
-    const newItems = items.filter(item => item.id !== id);
+  const handleRemoveRow = (uid: string | number) => {
+    const newItems = items.filter(item => item.uid !== uid);
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
   };
@@ -165,15 +174,14 @@ export default function BoardTableView({
         </thead>
         <tbody>
           {filteredItems.map((item, index) => (
-            <tr key={index} className={item.checkedIn ? "row-checked" : ""}>
+            <tr key={item.uid} className={item.checkedIn ? "row-checked" : ""}>
               <td>
                 <input
                   type="checkbox"
                   checked={item.checkedIn}
                   onChange={e => {
-                    handleCheckinChange(item.id, e.target.checked);
+                    handleCheckinChange(item.uid, e.target.checked);
                   }}
-                  onBlur={handleCellBlur}
                   aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
                 />
               </td>
@@ -181,7 +189,8 @@ export default function BoardTableView({
                 <input
                   className="spreadsheet-cell-input"
                   value={item.name}
-                  onChange={e => handleNameChange(item.id, e.target.value)}
+                  onFocus={() => setEditingRowUid(item.uid)}
+                  onChange={e => handleNameChange(item.uid, e.target.value)}
                   onBlur={handleCellBlur}
                   style={{ color: item.checkedIn ? "#0b8132" : "#b40026", fontWeight: 500 }}
                   aria-label="First Name"
@@ -192,7 +201,8 @@ export default function BoardTableView({
                 <input
                   className="spreadsheet-cell-input"
                   value={item.lastname ?? ""}
-                  onChange={e => handleLastNameChange(item.id, e.target.value)}
+                  onFocus={() => setEditingRowUid(item.uid)}
+                  onChange={e => handleLastNameChange(item.uid, e.target.value)}
                   onBlur={handleCellBlur}
                   aria-label="Last Name"
                   placeholder="Last Name"
@@ -202,7 +212,8 @@ export default function BoardTableView({
                 <input
                   className="spreadsheet-cell-input"
                   value={item.id}
-                  onChange={e => handleIdChange(item.id, e.target.value)}
+                  onFocus={() => setEditingRowUid(item.uid)}
+                  onChange={e => handleIdChange(item.uid, e.target.value)}
                   onBlur={handleCellBlur}
                   aria-label="ID"
                   placeholder="ID"
@@ -218,7 +229,7 @@ export default function BoardTableView({
                   className="spreadsheet-remove-row-btn"
                   aria-label="Remove Row"
                   title="Remove Row"
-                  onClick={() => handleRemoveRow(item.id)}
+                  onClick={() => handleRemoveRow(item.uid)}
                   type="button"
                   tabIndex={0}
                 >

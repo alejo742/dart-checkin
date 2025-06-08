@@ -7,6 +7,7 @@ import { fetchBoardById, updateBoardById, subscribeToBoardById } from "@/lib/boa
 import "@/styles/board/board_view.css";
 import BoardFilters from "./BoardFilters";
 import { Board } from "@/types/board";
+import { nanoid } from "nanoid";
 import { exportBoardAsCSV, exportBoardAsExcel } from "@/utils/export/exportBoard";
 
 export default function BoardPage() {
@@ -55,8 +56,9 @@ export default function BoardPage() {
         setBoardName(board.name ?? "");
         setItems(
           Array.isArray(board.items)
-            ? board.items.map((item: any, idx: number) => ({
-                id: item.id ?? idx,
+            ? board.items.map((item: any) => ({
+                uid: item.uid ?? nanoid(),
+                id: item.id ?? "",
                 name: item.name ?? "",
                 lastname: item.lastname ?? "",
                 checkedIn: !!item.checkedIn,
