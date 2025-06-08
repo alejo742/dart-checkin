@@ -21,7 +21,6 @@ interface Props {
 export default function BoardTableView({
   boardNameInitial,
   itemsInitial,
-  onItemsChange,
   onBoardNameChange,
   onSave,
   search = "",
@@ -34,10 +33,6 @@ export default function BoardTableView({
   // Sync props to state if they change
   useEffect(() => setBoardName(boardNameInitial), [boardNameInitial]);
   useEffect(() => setItems(itemsInitial), [itemsInitial]);
-
-  useEffect(() => {
-    onItemsChange?.(items);
-  }, [items, onItemsChange]);
 
   useEffect(() => {
     if (onBoardNameChange) onBoardNameChange(boardName);
@@ -94,7 +89,7 @@ export default function BoardTableView({
   // --- Add Row Functionality ---
   const handleAddRow = () => {
     // Generate a unique id (timestamp + random)
-    const newId = `row_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const newId = `f${Math.floor(Math.random() * 10000)}`;
     const newRow: Person = {
       id: newId,
       name: "",

@@ -9,6 +9,66 @@ body {
   padding: 2rem 1rem;
 }
 
+.board-main-actions {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.board-mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.export-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  min-width: 150px;
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+  border-radius: 10px;
+  z-index: 1000;
+  padding: 7px 0;
+  display: flex;
+  flex-direction: column;
+}
+.export-menu-dropdown button {
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  padding: 11px 20px;
+  color: #059669;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 6px;
+}
+.export-menu-dropdown button:hover {
+  background: #ecfdf5;
+}
+
+.export-board-btn {
+  background: #fff;
+  color: #059669;
+  border: 1.5px solid #34d399;
+  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  box-shadow: 0 2px 10px rgba(40, 160, 130, 0.07);
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 0.18em;
+  position: relative;
+}
+
 .board-header {
   display: flex;
   align-items: center;

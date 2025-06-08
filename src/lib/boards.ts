@@ -12,8 +12,10 @@ import {
   limit,
   deleteDoc,
   updateDoc,
+  onSnapshot,
   doc
 } from "firebase/firestore";
+import { nanoid } from "nanoid";
 import { Board, BoardFilters } from "@/types/board";
 
 /**
@@ -55,16 +57,21 @@ export async function createBoard({
   while (
     userBoardNames.includes(finalName.toLowerCase())
   ) {
-    // If Board, try Board 2, Board 3, etc.
     count += 1;
     finalName = baseName + " " + count;
   }
 
-  // 3. Add the board
+  // 3. Ensure each item has a unique uid
+  const itemsWithUid = (items || []).map(item => ({
+    ...item,
+    uid: nanoid(),
+  }));
+
+  // 4. Add the board
   const docRef = await addDoc(boardsRef, {
     name: finalName,
     ownerId,
-    items: items || [],
+    items: itemsWithUid,
     description: description || "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -72,7 +79,6 @@ export async function createBoard({
 
   return docRef;
 }
-
 /**
  * Fetch boards for a user, optionally filtering by board name, updatedAt, etc.
  * @param userId The Firebase user UID (required)
@@ -170,6 +176,36 @@ export async function updateBoardById(
   await updateDoc(boardRef, {
     ...boardUpdate,
     updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Subscribes to real-time updates for a board by ID.
+ * Calls the callback with the latest board data on each change.
+ * Returns the unsubscribe function.
+ * @param boardId The Firestore document ID of the board to subscribe to.
+ * @param callback The function to call with the board data on updates.}
+ * @returns A function to unsubscribe from the updates.
+ */
+export function subscribeToBoardById(
+  boardId: string,
+  callback: (board: Board | null) => void
+): () => void {
+  if (!boardId) throw new Error("No board ID provided.");
+  const ref = doc(db, "boards", boardId);
+  return onSnapshot(ref, (snap: any) => {
+    if (!snap.exists()) { callback(null); return; }
+    const data = snap.data();
+    callback({
+      id: snap.id,
+      name: data.name,
+      description: data.description,
+      ownerId: data.ownerId,
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : undefined,
+      items: data.items,
+      ...data,
+    } as Board);
   });
 }
 

@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import BoardTableView from "./BoardTableView";
 import BoardListView from "./BoardListView";
-import { fetchBoardById, updateBoardById } from "@/lib/boards";
+import { fetchBoardById, updateBoardById, subscribeToBoardById } from "@/lib/boards";
 import "@/styles/board/board_view.css";
 import BoardFilters from "./BoardFilters";
+import { Board } from "@/types/board";
+import { exportBoardAsCSV, exportBoardAsExcel } from "@/utils/export/exportBoard";
 
 export default function BoardPage() {
   const params = useParams();
@@ -20,7 +22,10 @@ export default function BoardPage() {
   const [filter, setFilter] = useState("all");
   const [saving, setSaving] = useState(false);
 
-  // Filtering logic
+  // Export dropdown
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // Filtering logic (for export and list view)
   const filteredItems = items.filter(item => {
     const matchSearch =
       item.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -39,74 +44,33 @@ export default function BoardPage() {
   useEffect(() => {
     if (!boardId) return;
     setLoading(true);
-    fetchBoardById(boardId)
-      .then((board) => {
-        if (!board) {
-          setError("Board not found.");
-          setBoardName("");
-          setItems([]);
-        } else {
-          setBoardName(board.name ?? "");
-          if (Array.isArray(board.items)) {
-            setItems(
-              board.items.map((item: any, idx: number) => ({
+    console.log("Subscribing to board", boardId);
+    const unsubscribe = subscribeToBoardById(boardId, (board: any) => {
+      console.log("onSnapshot fired", board);
+      if (!board) {
+        setError("Board not found.");
+        setBoardName("");
+        setItems([]);
+      } else {
+        setBoardName(board.name ?? "");
+        setItems(
+          Array.isArray(board.items)
+            ? board.items.map((item: any, idx: number) => ({
                 id: item.id ?? idx,
                 name: item.name ?? "",
                 lastname: item.lastname ?? "",
                 checkedIn: !!item.checkedIn,
               }))
-            );
-          } else {
-            setItems([]);
-          }
-        }
-      })
-      .catch(() => {
-        setError("Failed to load board.");
-        setBoardName("");
-        setItems([]);
-      })
-      .finally(() => setLoading(false));
+            : []
+        );
+      }
+      setLoading(false);
+    });
+    return () => {
+      console.log("Unsubscribing from board", boardId);
+      unsubscribe();
+    };
   }, [boardId]);
-
-// Save handler for board name
-const handleSaveBoardName = useCallback(
-    async (newName: string) => {
-      if (!boardId) return;
-      setSaving(true);
-      try {
-        await updateBoardById(boardId, { name: newName });
-        // No setBoardName here!
-      } catch {
-        setError("Failed to save board name.");
-      } finally {
-        setSaving(false);
-      }
-    },
-    [boardId]
-  );
-  
-  // Save handler for board items
-  const handleSaveItems = useCallback(
-    async (newItems: any[]) => {
-      if (!boardId) return;
-      setSaving(true);
-      try {
-        await updateBoardById(boardId, { items: newItems });
-        // No setItems here!
-      } catch {
-        setError("Failed to save items.");
-      } finally {
-        setSaving(false);
-      }
-    },
-    [boardId]
-  );
-  
-  // TableView item change handler (update local, save on user action)
-  const handleTableItemsChange = (newItems: any[]) => {
-    setItems(newItems);
-  };
 
   // TableView board name change handler (update local, save on user action)
   const handleTableBoardNameChange = (newName: string) => {
@@ -115,12 +79,32 @@ const handleSaveBoardName = useCallback(
 
   // TableView save action: only call one save, not both
   const handleTableSave = (newName: string, newItems: any[]) => {
-    // Save both at once if you want:
     setSaving(true);
     updateBoardById(boardId, { name: newName, items: newItems })
       .catch(() => setError("Failed to save changes."))
       .finally(() => setSaving(false));
   };
+
+  // Export handlers
+  const handleExportCSV = () => {
+    exportBoardAsCSV(boardName, filteredItems);
+    setShowExportMenu(false);
+  };
+
+  const handleExportExcel = async () => {
+    await exportBoardAsExcel(boardName, filteredItems);
+    setShowExportMenu(false);
+  };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      setShowExportMenu(false);
+    };
+    window.addEventListener("click", handleClick, { once: true });
+    return () => window.removeEventListener("click", handleClick);
+  }, [showExportMenu]);
 
   if (loading) {
     return <div style={{ padding: 32, textAlign: "center" }}>Loading...</div>;
@@ -131,19 +115,41 @@ const handleSaveBoardName = useCallback(
 
   return (
     <div>
-      <div style={{ marginBottom: 20, display: "flex", gap: 16 }}>
-        <button
-          className={`mode-btn${mode === "table" ? " active" : ""}`}
-          onClick={() => setMode("table")}
-        >
-          Table
-        </button>
-        <button
-          className={`mode-btn${mode === "list" ? " active" : ""}`}
-          onClick={() => setMode("list")}
-        >
-          List
-        </button>
+      <div className="board-main-actions">
+        <div className="board-mode-switch">
+          <button
+            className={`mode-btn${mode === "table" ? " active" : ""}`}
+            onClick={() => setMode("table")}
+          >
+            Table
+          </button>
+          <button
+            className={`mode-btn${mode === "list" ? " active" : ""}`}
+            onClick={() => setMode("list")}
+          >
+            List
+          </button>
+        </div>
+
+        <div style={{ position: "relative", display: "inline-block" }}>
+          <button
+            className="export-board-btn"
+            onClick={e => {
+              e.stopPropagation();
+              setShowExportMenu(s => !s);
+            }}
+            type="button"
+          >
+            Export as...
+            <span className="material-symbols-outlined">keyboard_arrow_down</span>
+          </button>
+          {showExportMenu && (
+            <div className="export-menu-dropdown">
+              <button onClick={handleExportCSV} type="button">Export as CSV</button>
+              <button onClick={handleExportExcel} type="button">Export as Excel</button>
+            </div>
+          )}
+        </div>
       </div>
       <BoardFilters
         search={search}
@@ -160,7 +166,6 @@ const handleSaveBoardName = useCallback(
         <BoardTableView
           boardNameInitial={boardName}
           itemsInitial={items}
-          onItemsChange={handleTableItemsChange}
           onBoardNameChange={handleTableBoardNameChange}
           onSave={handleTableSave}
           search={search}

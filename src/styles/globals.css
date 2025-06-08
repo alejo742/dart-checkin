@@ -1,3 +1,5 @@
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0';
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -39,4 +41,12 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
 }
