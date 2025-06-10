@@ -1,21 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { nanoid } from "nanoid";
 
-interface Person {
+interface ItemType {
   uid: string; // for row identification
-  id: string | number;
-  name: string;
-  lastname?: string;
-  checkedIn: boolean;
+  checkedIn?: boolean;
+  [key: string]: any; // other dynamic fields, all string except checkedIn
 }
 
 interface Props {
   boardNameInitial: string;
-  itemsInitial: Person[];
-  onItemsChange?: (items: Person[]) => void;
+  itemsInitial: ItemType[];
+  onItemsChange?: (items: ItemType[]) => void;
   onBoardNameChange?: (name: string) => void;
-  onSave?: (name: string, items: Person[]) => void;
+  onSave?: (name: string, items: ItemType[]) => void;
   search?: string;
   filter?: string;
 }
@@ -31,23 +29,23 @@ export default function BoardTableView({
   const [boardName, setBoardName] = useState(boardNameInitial);
   const [boardNameEditing, setBoardNameEditing] = useState(false);
   const [editingRowUid, setEditingRowUid] = useState<string | null>(null);
-  const [items, setItems] = useState(itemsInitial);
+  const [items, setItems] = useState<ItemType[]>(itemsInitial);
 
-  // Sync props to state if they change
-  useEffect(() => setBoardName(boardNameInitial), [boardNameInitial]);
-  useEffect(() => setItems(itemsInitial), [itemsInitial]);
+  // Dynamically determine all columns except 'uid' and 'checkedIn'
+  const columns = Array.from(
+    new Set(
+      items.flatMap((item) => Object.keys(item))
+        .filter((k) => k !== "uid" && k !== "checkedIn")
+    )
+  );
 
-  useEffect(() => {
-    if (onBoardNameChange) onBoardNameChange(boardName);
-  }, [boardName, onBoardNameChange]);
-
-  // Filtering logic (moved from parent)
+  // Filtering logic: always include the row being edited!
   const filteredItems = items.filter(item => {
-    if (item.uid === editingRowUid) return true; // Always show the row being edited
-    const matchSearch =
-      (item.name?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-      (item.lastname?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-      (item.id?.toString().toLowerCase().includes(search.toLowerCase()) ?? false);
+    if (item.uid === editingRowUid) return true;
+    // Search only over values (except checkedIn/uid)
+    const matchSearch = columns.some(col => 
+      (item[col]?.toString().toLowerCase().includes(search.toLowerCase()))
+    );
     const matchFilter =
       filter === "all"
         ? true
@@ -57,25 +55,21 @@ export default function BoardTableView({
     return matchSearch && matchFilter;
   });
 
-  const handleNameChange = (uid: string | number, name: string) => {
+  // Handle input changes for any dynamic field
+  const handleCellChange = (
+    uid: string,
+    key: string,
+    value: string
+  ) => {
     setItems((prev) =>
-      prev.map((item) => (item.uid === uid ? { ...item, name } : item))
+      prev.map((item) =>
+        item.uid === uid ? { ...item, [key]: value } : item
+      )
     );
   };
 
-  const handleLastNameChange = (uid: string | number, lastname: string) => {
-    setItems((prev) =>
-      prev.map((item) => (item.uid === uid ? { ...item, lastname } : item))
-    );
-  };
-
-  const handleIdChange = (uid: string | number, newId: string) => {
-    setItems((prev) =>
-      prev.map((item) => (item.uid === uid ? { ...item, id: newId } : item))
-    );
-  };
-
-  const handleCheckinChange = (uid: string | number, checkedIn: boolean) => {
+  // Handle checkbox
+  const handleCheckinChange = (uid: string, checkedIn: boolean) => {
     const updatedItems = items.map((item) =>
       item.uid === uid ? { ...item, checkedIn } : item
     );
@@ -89,21 +83,17 @@ export default function BoardTableView({
   };
 
   const handleCellBlur = () => {
-    // filtering returns 
     setEditingRowUid(null);
-
     if (onSave) onSave(boardName, items);
   };
 
   // --- Add Row Functionality ---
   const handleAddRow = () => {
-    // Generate a unique uid for the row
-    const newRow: Person & { uid: string } = {
+    // Generate a blank row with all current columns, plus checkedIn
+    const newRow: ItemType = {
       uid: nanoid(),
-      id: "",
-      name: "",
-      lastname: "",
       checkedIn: false,
+      ...Object.fromEntries(columns.map(col => [col, ""]))
     };
     const newItems = [...items, newRow];
     setItems(newItems);
@@ -111,11 +101,15 @@ export default function BoardTableView({
   };
 
   // --- Remove Row Functionality ---
-  const handleRemoveRow = (uid: string | number) => {
+  const handleRemoveRow = (uid: string) => {
     const newItems = items.filter(item => item.uid !== uid);
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
   };
+
+  useEffect(() => {
+    if (onBoardNameChange) onBoardNameChange(boardName);
+  }, [boardName, onBoardNameChange]);
 
   return (
     <div className="board-table-container">
@@ -165,9 +159,9 @@ export default function BoardTableView({
         <thead>
           <tr>
             <th style={{ width: 36 }}></th>
-            <th>Name</th>
-            <th>Last Name</th>
-            <th>ID</th>
+            {columns.map(col => (
+              <th key={col}>{col}</th>
+            ))}
             <th>Status</th>
             <th style={{ width: 44 }}></th>
           </tr>
@@ -178,47 +172,24 @@ export default function BoardTableView({
               <td>
                 <input
                   type="checkbox"
-                  checked={item.checkedIn}
-                  onChange={e => {
-                    handleCheckinChange(item.uid, e.target.checked);
-                  }}
+                  checked={!!item.checkedIn}
+                  onChange={e => handleCheckinChange(item.uid, e.target.checked)}
                   aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
                 />
               </td>
-              <td>
-                <input
-                  className="spreadsheet-cell-input"
-                  value={item.name}
-                  onFocus={() => setEditingRowUid(item.uid)}
-                  onChange={e => handleNameChange(item.uid, e.target.value)}
-                  onBlur={handleCellBlur}
-                  style={{ color: item.checkedIn ? "#0b8132" : "#b40026", fontWeight: 500 }}
-                  aria-label="First Name"
-                  placeholder="First Name"
-                />
-              </td>
-              <td>
-                <input
-                  className="spreadsheet-cell-input"
-                  value={item.lastname ?? ""}
-                  onFocus={() => setEditingRowUid(item.uid)}
-                  onChange={e => handleLastNameChange(item.uid, e.target.value)}
-                  onBlur={handleCellBlur}
-                  aria-label="Last Name"
-                  placeholder="Last Name"
-                />
-              </td>
-              <td>
-                <input
-                  className="spreadsheet-cell-input"
-                  value={item.id}
-                  onFocus={() => setEditingRowUid(item.uid)}
-                  onChange={e => handleIdChange(item.uid, e.target.value)}
-                  onBlur={handleCellBlur}
-                  aria-label="ID"
-                  placeholder="ID"
-                />
-              </td>
+              {columns.map(col => (
+                <td key={col}>
+                  <input
+                    className="spreadsheet-cell-input"
+                    value={item[col] ?? ""}
+                    onFocus={() => setEditingRowUid(item.uid)}
+                    onChange={e => handleCellChange(item.uid, col, e.target.value)}
+                    onBlur={handleCellBlur}
+                    aria-label={col}
+                    placeholder={col}
+                  />
+                </td>
+              ))}
               <td>
                 <span className={item.checkedIn ? "status-green" : "status-red"}>
                   {item.checkedIn ? "Checked In" : "Not Checked In"}

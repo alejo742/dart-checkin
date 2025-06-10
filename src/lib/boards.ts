@@ -79,6 +79,7 @@ export async function createBoard({
 
   return docRef;
 }
+
 /**
  * Fetch boards for a user, optionally filtering by board name, updatedAt, etc.
  * @param userId The Firebase user UID (required)

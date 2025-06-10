@@ -11,7 +11,7 @@ import CreateBoardButton from "@/app/_components/board/CreateBoardButton";
 import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import "@/styles/board/board_new.css";
 
-const SAMPLE_CSV = `Alejandro,Manrique,f0079rn\nPatricia,Increible,f88ands`;
+const SAMPLE_CSV = `Alejandro,Manrique,f0079rn\nPatricia,Increible,f88ands, vegetarian, yes\n John,Doe,f12345, true\nJane,Doe,f67890, false`;
 
 export default function BoardNewPage() {
   const [csvText, setCsvText] = useState("");
@@ -205,6 +205,7 @@ export default function BoardNewPage() {
             parsedItems={parsedItems}
             boardName={boardName}
             description={description}
+            csvText={csvText}
           />
           
           {importResult && (

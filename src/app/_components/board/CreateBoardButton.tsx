@@ -1,5 +1,6 @@
 import { useCurrentUser } from "@/lib/user/useCurrentUser";
 import { createBoard } from "@/lib/boards";
+import { parseItemsFromCSVWithAI } from "@/utils/import/parseCsvWithAI";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -7,10 +8,12 @@ export default function CreateBoardButton({
   parsedItems,
   boardName,
   description,
+  csvText
 }: {
   parsedItems: any[];     // Array of {name, lastname, id, checked} etc.
   boardName?: string;
   description?: string;
+  csvText?: string;       // Optional CSV text to parse
 }) {
   const user = useCurrentUser();
   const router = useRouter();
@@ -23,10 +26,21 @@ export default function CreateBoardButton({
     }
     setLoading(true);
     try {
+      let items = parsedItems ?? [];
+      // Use AI to parse CSV if csvText is provided (and maybe always use AI)
+      if (csvText && csvText.trim()) {
+        try {
+          items = await parseItemsFromCSVWithAI(csvText);
+        } catch (err) {
+          alert("Failed to parse CSV with AI: " + (err as Error).message);
+          setLoading(false);
+          return;
+        }
+      }
       const docRef = await createBoard({
         ownerId: user.uid,
         boardName,
-        items: parsedItems ?? [],
+        items,
         description,
       });
       router.push(`/board/${docRef.id}`);

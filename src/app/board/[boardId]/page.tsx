@@ -28,10 +28,12 @@ export default function BoardPage() {
 
   // Filtering logic (for export and list view)
   const filteredItems = items.filter(item => {
-    const matchSearch =
-      item.name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.lastname?.toLowerCase().includes(search.toLowerCase()) ||
-      item.id?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = Object.entries(item)
+    .filter(([key]) => key !== "uid" && key !== "checkedIn")
+    .some(([_, value]) =>
+      typeof value === "string" &&
+      value.toLowerCase().includes(search.toLowerCase())
+    );
     const matchFilter =
       filter === "all"
         ? true
@@ -57,11 +59,9 @@ export default function BoardPage() {
         setItems(
           Array.isArray(board.items)
             ? board.items.map((item: any) => ({
+                ...item,
                 uid: item.uid ?? nanoid(),
-                id: item.id ?? "",
-                name: item.name ?? "",
-                lastname: item.lastname ?? "",
-                checkedIn: !!item.checkedIn,
+                checkedIn: typeof item.checkedIn === "boolean" ? item.checkedIn : !!item.checkedIn,
               }))
             : []
         );
