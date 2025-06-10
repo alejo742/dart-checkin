@@ -20,7 +20,7 @@ The schema would look something like this, but we are not strict about it, you c
     checkedIn: true
     RSVP: "Yes"
   }
-Usually there is always name, last name and dartmouth ID, and in 0.1% cases maybe there isnt. Checked in, name, ID and lastname should always be there, if not provided, just add. That means, fill whenever possible. If there is only ID in one row, just return an object with ID and the rest of mandatory attribtues in blank, as empty strings. Or, if you are feeling generous, use "null". Remember that the name for the checkedIn field should be strictly "checkedIn" for my program to work. I will convert into a super villain if you use any other checkedIn name. Also, make sure to order the columns in a way that makes sense, like name, last name, ID, RSVP, etc.
+Usually there is always name, last name and dartmouth ID, and in 0.1% cases maybe there isnt. Checked in, name, ID and lastname should always be there, if not provided, just add. That means, fill whenever possible. If there is only ID in one row, just return an object with ID and the rest of mandatory attribtues in blank, as empty strings. Or, if you are feeling generous, use "null". Remember that the name for the checkedIn field should be strictly "checkedIn" for my program to work. I will convert into a super villain if you use any other checkedIn name. Also, make sure the columns are ordered. Usually the most important attributes go first, if it seems good, leave it as is.
 
 Basically, your task is easy. Infer what columns each object should have, all objects should have all columns, and craft the object by taking the user input and manipulating it to something usable. Remember it must be complete for use in a table.
 

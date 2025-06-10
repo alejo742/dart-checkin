@@ -36,10 +36,7 @@ export async function createBoard({
   ownerId: string;
   boardName?: string;
   items?: {
-    name?: string;
-    lastname?: string;
-    id?: string;
-    checked?: boolean;
+    [key: string]: any;
   }[];
   description?: string;
 }): Promise<DocumentReference> {
@@ -67,11 +64,20 @@ export async function createBoard({
     uid: nanoid(),
   }));
 
-  // 4. Add the board
+  // 4. Determine column order from the first item, excluding 'uid'
+  let columnOrder: string[] = [];
+  if (itemsWithUid.length > 0) {
+    columnOrder = Object.keys(itemsWithUid[0]).filter(
+      key => key !== "uid"
+    );
+  }
+
+  // 5. Add the board
   const docRef = await addDoc(boardsRef, {
     name: finalName,
     ownerId,
     items: itemsWithUid,
+    columnOrder, // <--- store column order too
     description: description || "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -132,6 +138,35 @@ export async function fetchBoards(
       items: data.items
     } as Board;
   });
+}
+
+/**
+ * Fetches the column order for a board by its document ID.
+ * Returns an array of column keys in the order they should be displayed (excluding "uid").
+ * If columnOrder is not set, will infer from the first item row (excluding "uid").
+ * 
+ * @param boardId The Firestore document ID of the board.
+ * @returns Promise<string[]> Array of column names in order (excluding "uid").
+ */
+export async function fetchBoardColumnOrder(boardId: string): Promise<string[]> {
+  if (!boardId) throw new Error("No board ID provided.");
+  const ref = doc(db, "boards", boardId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return [];
+  const data = snap.data();
+
+  // Prefer explicit columnOrder
+  if (Array.isArray(data.columnOrder) && data.columnOrder.length > 0) {
+    return data.columnOrder.filter((col: string) => col !== "uid");
+  }
+
+  // Fallback: infer from first item if present
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return Object.keys(data.items[0]).filter((col) => col !== "uid");
+  }
+
+  // No columns available
+  return [];
 }
 
 /**

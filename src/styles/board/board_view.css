@@ -190,6 +190,7 @@ body {
 }
 
 .board-table-container {
+  overflow-x: auto;
   background: #f8fbff;
   border-radius: 12px;
   box-shadow: 0 1.5px 8px rgba(10, 34, 55, 0.07);
@@ -245,7 +246,7 @@ body {
   border-collapse: collapse;
   background: #fff;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 0.5px 4px rgba(10, 34, 55, 0.04);
   font-size: 1.07rem;
 }

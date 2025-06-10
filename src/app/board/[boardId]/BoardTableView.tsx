@@ -1,17 +1,18 @@
 "use client";
-import { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, useRef, useCallback, forwardRef } from "react";
 import { nanoid } from "nanoid";
+import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 
 interface ItemType {
-  uid: string; // for row identification
+  uid: string;
   checkedIn?: boolean;
-  [key: string]: any; // other dynamic fields, all string except checkedIn
+  [key: string]: any;
 }
 
 interface Props {
   boardNameInitial: string;
+  columns: string[]; // Pass in columns as from import/preview!
   itemsInitial: ItemType[];
-  onItemsChange?: (items: ItemType[]) => void;
   onBoardNameChange?: (name: string) => void;
   onSave?: (name: string, items: ItemType[]) => void;
   search?: string;
@@ -20,6 +21,7 @@ interface Props {
 
 export default function BoardTableView({
   boardNameInitial,
+  columns,
   itemsInitial,
   onBoardNameChange,
   onSave,
@@ -31,19 +33,10 @@ export default function BoardTableView({
   const [editingRowUid, setEditingRowUid] = useState<string | null>(null);
   const [items, setItems] = useState<ItemType[]>(itemsInitial);
 
-  // Dynamically determine all columns except 'uid' and 'checkedIn'
-  const columns = Array.from(
-    new Set(
-      items.flatMap((item) => Object.keys(item))
-        .filter((k) => k !== "uid" && k !== "checkedIn")
-    )
-  );
-
   // Filtering logic: always include the row being edited!
-  const filteredItems = items.filter(item => {
+  const filteredItems = items.filter((item) => {
     if (item.uid === editingRowUid) return true;
-    // Search only over values (except checkedIn/uid)
-    const matchSearch = columns.some(col => 
+    const matchSearch = columns.some((col) =>
       (item[col]?.toString().toLowerCase().includes(search.toLowerCase()))
     );
     const matchFilter =
@@ -55,20 +48,15 @@ export default function BoardTableView({
     return matchSearch && matchFilter;
   });
 
-  // Handle input changes for any dynamic field
-  const handleCellChange = (
-    uid: string,
-    key: string,
-    value: string
-  ) => {
+  const filteredItemsRef = useRef(filteredItems);
+  filteredItemsRef.current = filteredItems;
+
+  const handleCellChange = (uid: string, key: string, value: string) => {
     setItems((prev) =>
-      prev.map((item) =>
-        item.uid === uid ? { ...item, [key]: value } : item
-      )
+      prev.map((item) => (item.uid === uid ? { ...item, [key]: value } : item))
     );
   };
 
-  // Handle checkbox
   const handleCheckinChange = (uid: string, checkedIn: boolean) => {
     const updatedItems = items.map((item) =>
       item.uid === uid ? { ...item, checkedIn } : item
@@ -87,42 +75,115 @@ export default function BoardTableView({
     if (onSave) onSave(boardName, items);
   };
 
-  // --- Add Row Functionality ---
+  // Add Row: new row has all columns (except "Check") as blank
   const handleAddRow = () => {
-    // Generate a blank row with all current columns, plus checkedIn
     const newRow: ItemType = {
       uid: nanoid(),
       checkedIn: false,
-      ...Object.fromEntries(columns.map(col => [col, ""]))
+      ...Object.fromEntries(columns.filter(col => col !== "Check").map((col) => [col, ""])),
     };
     const newItems = [...items, newRow];
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
   };
 
-  // --- Remove Row Functionality ---
   const handleRemoveRow = (uid: string) => {
-    const newItems = items.filter(item => item.uid !== uid);
+    const newItems = items.filter((item) => item.uid !== uid);
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
   };
 
-  useEffect(() => {
-    if (onBoardNameChange) onBoardNameChange(boardName);
-  }, [boardName, onBoardNameChange]);
+  const Row = useCallback(
+    ({ index }: ListChildComponentProps) => {
+      const item = filteredItemsRef.current[index];
+      return (
+        <tr key={item.uid} className={item.checkedIn ? "row-checked" : ""}>
+          {/* "Check" column handled as a checkbox */}
+          <td>
+            <input
+              type="checkbox"
+              checked={!!item.checkedIn}
+              onChange={(e) => handleCheckinChange(item.uid, e.target.checked)}
+              aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
+            />
+          </td>
+          {/* Skip first column, which is "Check" */}
+          {columns.slice(1).map((col) => (
+            <td key={col}>
+              <input
+                className="spreadsheet-cell-input"
+                value={item[col] ?? ""}
+                onFocus={() => setEditingRowUid(item.uid)}
+                onChange={(e) => handleCellChange(item.uid, col, e.target.value)}
+                onBlur={handleCellBlur}
+                aria-label={col}
+                placeholder={col}
+              />
+            </td>
+          ))}
+          <td>
+            <span className={item.checkedIn ? "status-green" : "status-red"}>
+              {item.checkedIn ? "Checked In" : "Not Checked In"}
+            </span>
+          </td>
+          <td>
+            <button
+              className="spreadsheet-remove-row-btn"
+              aria-label="Remove Row"
+              title="Remove Row"
+              onClick={() => handleRemoveRow(item.uid)}
+              type="button"
+              tabIndex={0}
+            >
+              Remove
+            </button>
+          </td>
+        </tr>
+      );
+    },
+    [columns]
+  );
+
+  // Virtualization setup: only <tr> inside <tbody>
+  const InnerElement = forwardRef<HTMLTableSectionElement, React.HTMLProps<HTMLTableSectionElement>>(
+    function InnerElement(props, ref) {
+      return <>{props.children}</>;
+    }
+  );
+  InnerElement.displayName = "InnerElement";
+  const OuterElement = forwardRef<HTMLTableSectionElement, React.HTMLProps<HTMLTableSectionElement>>(
+    function OuterElement(props, ref) {
+      return <tbody ref={ref} {...props} />;
+    }
+  );
+  OuterElement.displayName = "OuterElement";
+
+  const rowHeight = 48;
+  const totalRows = filteredItems.length;
+  const listHeight = Math.min(12, totalRows) * rowHeight;
 
   return (
-    <div className="board-table-container">
-      <div className="board-table-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div className="board-table-container" style={{ overflowX: "auto", overflowY: "auto", maxHeight: `${listHeight + 48}px` }}>
+      <div
+        className="board-table-header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <div>
           {boardNameEditing ? (
             <input
               value={boardName}
               autoFocus
               className="board-edit-title"
-              onChange={e => setBoardName(e.target.value)}
+              onChange={(e) => setBoardName(e.target.value)}
               onBlur={handleBoardNameBlur}
-              onKeyDown={e => (e.key === "Enter" || e.key === "Escape") && handleBoardNameBlur()}
+              onKeyDown={(e) =>
+                (e.key === "Enter" || e.key === "Escape") &&
+                handleBoardNameBlur()
+              }
             />
           ) : (
             <h2
@@ -132,7 +193,9 @@ export default function BoardTableView({
               title="Click to edit board name"
             >
               {boardName}
-              <span className="edit-icon" title="Edit">&#9998;</span>
+              <span className="edit-icon" title="Edit">
+                &#9998;
+              </span>
             </h2>
           )}
         </div>
@@ -155,61 +218,34 @@ export default function BoardTableView({
           + Add Row
         </button>
       </div>
-      <table className="spreadsheet-table">
+      <table
+        className="spreadsheet-table"
+        style={{
+          minWidth: `${(columns.length + 3) * 160}px`,
+          tableLayout: "fixed",
+        }}
+      >
         <thead>
           <tr>
-            <th style={{ width: 36 }}></th>
-            {columns.map(col => (
-              <th key={col}>{col}</th>
+            {/* Show header, but blank for "Check" */}
+            {columns.map((col, idx) => (
+              <th key={col + idx}>{col === "Check" ? "" : col}</th>
             ))}
             <th>Status</th>
-            <th style={{ width: 44 }}></th>
+            <th style={{ width: 44, minWidth: 44 }}></th>
           </tr>
         </thead>
-        <tbody>
-          {filteredItems.map((item, index) => (
-            <tr key={item.uid} className={item.checkedIn ? "row-checked" : ""}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={!!item.checkedIn}
-                  onChange={e => handleCheckinChange(item.uid, e.target.checked)}
-                  aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
-                />
-              </td>
-              {columns.map(col => (
-                <td key={col}>
-                  <input
-                    className="spreadsheet-cell-input"
-                    value={item[col] ?? ""}
-                    onFocus={() => setEditingRowUid(item.uid)}
-                    onChange={e => handleCellChange(item.uid, col, e.target.value)}
-                    onBlur={handleCellBlur}
-                    aria-label={col}
-                    placeholder={col}
-                  />
-                </td>
-              ))}
-              <td>
-                <span className={item.checkedIn ? "status-green" : "status-red"}>
-                  {item.checkedIn ? "Checked In" : "Not Checked In"}
-                </span>
-              </td>
-              <td>
-                <button
-                  className="spreadsheet-remove-row-btn"
-                  aria-label="Remove Row"
-                  title="Remove Row"
-                  onClick={() => handleRemoveRow(item.uid)}
-                  type="button"
-                  tabIndex={0}
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+        <List
+          height={listHeight}
+          itemCount={totalRows}
+          itemSize={rowHeight}
+          width="100%"
+          outerElementType={OuterElement as any}
+          innerElementType={InnerElement as any}
+          style={{ overflowX: "hidden", willChange: "auto" }}
+        >
+          {Row}
+        </List>
       </table>
     </div>
   );

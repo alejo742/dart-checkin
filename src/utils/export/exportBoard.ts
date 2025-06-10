@@ -2,8 +2,6 @@ import ExcelJS from "exceljs";
 
 /**
  * Triggers a file download in the browser.
- * @param blob - The Blob object containing the file data.
- * @param filename - The name of the file to download.
  */
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -18,14 +16,31 @@ function triggerDownload(blob: Blob, filename: string) {
 }
 
 /**
- * Exports the given items as a CSV file and triggers download.
- * @param boardName - The name of the board to use in the filename.
- * @param items - The array of items to export, where each item is an object with key-value pairs.
+ * Utility to filter out any key that matches /^uid$/i (case-insensitive).
  */
-export function exportBoardAsCSV(boardName: string, items: any[]) {
+function filterUid(keys: string[]): string[] {
+  return keys.filter(k => !/^uid$/i.test(k));
+}
+
+/**
+ * Exports the given items as a CSV file and triggers download.
+ * If columnOrder is provided, uses it to control the order of columns in the export.
+ */
+export function exportBoardAsCSV(boardName: string, items: any[], columnOrder?: string[]) {
   if (!items.length) return;
-  // Reorder columns: checkedIn first, then others
-  const columns = ["checkedIn", ...Object.keys(items[0]).filter(k => k !== "checkedIn")];
+  // Prefer provided columnOrder, otherwise use detected keys
+  let columns: string[];
+  if (Array.isArray(columnOrder) && columnOrder.length > 0) {
+    columns = columnOrder.filter(k => !/^uid$/i.test(k));
+    // Always put checkedIn first if present
+    if (columns.includes("checkedIn")) {
+      columns = ["checkedIn", ...columns.filter(k => k !== "checkedIn")];
+    }
+  } else {
+    const keys = Object.keys(items[0]);
+    columns = ["checkedIn", ...filterUid(keys).filter(k => k !== "checkedIn")];
+  }
+
   const csvRows = [
     columns.join(","), // header
     ...items.map(item =>
@@ -46,18 +61,26 @@ export function exportBoardAsCSV(boardName: string, items: any[]) {
 
 /**
  * Exports the given items as an Excel file (.xlsx) using ExcelJS and triggers download.
- * Displays "x" if checked in, otherwise empty, with styling.
- * @param boardName - The name of the board to use in the filename.
- * @param items - The array of items to export, where each item is an object with key-value pairs.
+ * If columnOrder is provided, uses it to control the order of columns in the export.
  */
-export async function exportBoardAsExcel(boardName: string, items: any[]) {
+export async function exportBoardAsExcel(boardName: string, items: any[], columnOrder?: string[]) {
   if (!items.length) return;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Board");
 
-  // Reorder columns: checkedIn first, then others
-  const allKeys = Object.keys(items[0] ?? {});
-  const columns = ["checkedIn", ...allKeys.filter(k => k !== "checkedIn")];
+  // Prefer provided columnOrder, otherwise use detected keys
+  let columns: string[];
+  if (Array.isArray(columnOrder) && columnOrder.length > 0) {
+    columns = columnOrder.filter(k => !/^uid$/i.test(k));
+    // Always put checkedIn first if present
+    if (columns.includes("checkedIn")) {
+      columns = ["checkedIn", ...columns.filter(k => k !== "checkedIn")];
+    }
+  } else {
+    const allKeys = Object.keys(items[0] ?? {});
+    columns = ["checkedIn", ...filterUid(allKeys).filter(k => k !== "checkedIn")];
+  }
+
   sheet.columns = columns.map(key => ({
     header: key === "checkedIn" ? "Checked In" : key[0].toUpperCase() + key.slice(1),
     key,
@@ -95,7 +118,7 @@ export async function exportBoardAsExcel(boardName: string, items: any[]) {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFBBF7D0" }, // more distinct green for header
+      fgColor: { argb: "FFBBF7D0" },
     };
     cell.font = { bold: true };
     cell.border = {
@@ -107,7 +130,7 @@ export async function exportBoardAsExcel(boardName: string, items: any[]) {
     cell.alignment = { vertical: "middle", horizontal: "center" };
   });
 
-  // Data rows: alternate background for all, including last row (fixes bug)
+  // Data rows: alternate background for all, including last row
   const rowCount = sheet.rowCount;
   for (let rowNumber = 2; rowNumber <= rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
@@ -118,13 +141,11 @@ export async function exportBoardAsExcel(boardName: string, items: any[]) {
         bottom: { style: "thin", color: { argb: "FFB8E0D2" } },
         right: { style: "thin", color: { argb: "FFB8E0D2" } },
       };
-      // Alternate row background for readability
       cell.fill = {
         type: "pattern",
         pattern: "solid",
         fgColor: { argb: rowNumber % 2 === 0 ? "FFF0FDF4" : "FFFFFFFF" },
       };
-      // Center align the checkedIn cell
       if (colNumber === 1) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
         cell.font = { bold: true, color: { argb: "FF059669" } };

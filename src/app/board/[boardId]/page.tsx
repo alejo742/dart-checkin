@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import BoardTableView from "./BoardTableView";
 import BoardListView from "./BoardListView";
-import { fetchBoardById, updateBoardById, subscribeToBoardById } from "@/lib/boards";
+import { fetchBoardById, updateBoardById, subscribeToBoardById, fetchBoardColumnOrder } from "@/lib/boards";
 import "@/styles/board/board_view.css";
 import BoardFilters from "./BoardFilters";
 import { Board } from "@/types/board";
@@ -22,6 +22,7 @@ export default function BoardPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [saving, setSaving] = useState(false);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
 
   // Export dropdown
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -43,34 +44,44 @@ export default function BoardPage() {
     return matchSearch && matchFilter;
   });
 
-  // Fetch board data on mount
+  // Fetch board data & column order on mount
   useEffect(() => {
     if (!boardId) return;
     setLoading(true);
-    console.log("Subscribing to board", boardId);
-    const unsubscribe = subscribeToBoardById(boardId, (board: any) => {
-      console.log("onSnapshot fired", board);
-      if (!board) {
-        setError("Board not found.");
-        setBoardName("");
-        setItems([]);
-      } else {
-        setBoardName(board.name ?? "");
-        setItems(
-          Array.isArray(board.items)
-            ? board.items.map((item: any) => ({
-                ...item,
-                uid: item.uid ?? nanoid(),
-                checkedIn: typeof item.checkedIn === "boolean" ? item.checkedIn : !!item.checkedIn,
-              }))
-            : []
-        );
-      }
-      setLoading(false);
-    });
+    let unsub: (() => void) | undefined;
+
+    const fetchColumnsAndSubscribe = async () => {
+      // Fetch column order first
+      const colOrder = await fetchBoardColumnOrder(boardId);
+      setColumnOrder(colOrder);
+
+      unsub = subscribeToBoardById(boardId, (board: any) => {
+        if (!board) {
+          setError("Board not found.");
+          setBoardName("");
+          setItems([]);
+        } else {
+          setBoardName(board.name ?? "");
+          setItems(
+            Array.isArray(board.items)
+              ? board.items.map((item: any) => ({
+                  ...item,
+                  uid: item.uid ?? nanoid(),
+                  checkedIn: typeof item.checkedIn === "boolean" ? item.checkedIn : !!item.checkedIn,
+                }))
+              : []
+          );
+          // Always update column order if present in board
+          if (Array.isArray(board.columnOrder)) setColumnOrder(board.columnOrder);
+        }
+        setLoading(false);
+      });
+    };
+
+    fetchColumnsAndSubscribe();
+
     return () => {
-      console.log("Unsubscribing from board", boardId);
-      unsubscribe();
+      if (unsub) unsub();
     };
   }, [boardId]);
 
@@ -87,14 +98,14 @@ export default function BoardPage() {
       .finally(() => setSaving(false));
   };
 
-  // Export handlers
+  // Export handlers (pass columnOrder)
   const handleExportCSV = () => {
-    exportBoardAsCSV(boardName, filteredItems);
+    exportBoardAsCSV(boardName, filteredItems, columnOrder);
     setShowExportMenu(false);
   };
 
   const handleExportExcel = async () => {
-    await exportBoardAsExcel(boardName, filteredItems);
+    await exportBoardAsExcel(boardName, filteredItems, columnOrder);
     setShowExportMenu(false);
   };
 
@@ -168,6 +179,7 @@ export default function BoardPage() {
         <BoardTableView
           boardNameInitial={boardName}
           itemsInitial={items}
+          columns={columnOrder}
           onBoardNameChange={handleTableBoardNameChange}
           onSave={handleTableSave}
           search={search}

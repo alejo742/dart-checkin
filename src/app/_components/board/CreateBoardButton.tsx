@@ -3,6 +3,8 @@ import { createBoard } from "@/lib/boards";
 import { parseItemsFromCSVWithAI } from "@/utils/import/parseCsvWithAI";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { parseCsv } from "@/utils/import/normalizeFlexibleInput";
+import { guessColumns, normalizeRows } from "@/utils/import/heuristics";
 
 export default function CreateBoardButton({
   parsedItems,
@@ -10,10 +12,10 @@ export default function CreateBoardButton({
   description,
   csvText
 }: {
-  parsedItems: any[];     // Array of {name, lastname, id, checked} etc.
+  parsedItems: any[];
   boardName?: string;
   description?: string;
-  csvText?: string;       // Optional CSV text to parse
+  csvText?: string;
 }) {
   const user = useCurrentUser();
   const router = useRouter();
@@ -27,14 +29,23 @@ export default function CreateBoardButton({
     setLoading(true);
     try {
       let items = parsedItems ?? [];
-      // Use AI to parse CSV if csvText is provided (and maybe always use AI)
       if (csvText && csvText.trim()) {
-        try {
-          items = await parseItemsFromCSVWithAI(csvText);
-        } catch (err) {
-          alert("Failed to parse CSV with AI: " + (err as Error).message);
-          setLoading(false);
-          return;
+        if (csvText.length > 5000) {
+          // Use heuristics for large CSVs
+          const rows = parseCsv(csvText);
+          // Remove empty rows
+          const filteredRows = rows.filter(row => row.some(cell => cell.trim().length > 0));
+          const guesses = guessColumns(filteredRows);
+          items = normalizeRows(filteredRows, guesses);
+        } else {
+          // Use OpenAI for small CSVs
+          try {
+            items = await parseItemsFromCSVWithAI(csvText);
+          } catch (err) {
+            alert("Failed to parse CSV with AI: " + (err as Error).message);
+            setLoading(false);
+            return;
+          }
         }
       }
       const docRef = await createBoard({
@@ -55,6 +66,7 @@ export default function CreateBoardButton({
     <button
       className="create-board-btn"
       onClick={handleCreate}
+      disabled={loading}
     >
       {loading ? "Creating..." : "Create Board"}
     </button>
