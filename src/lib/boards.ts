@@ -195,7 +195,6 @@ export async function fetchBoardById(boardId: string): Promise<Board | null> {
 
 /**
  * Updates a board in Firestore by its ID.
- * Uses a smart merge strategy that prioritizes preserving positive check-ins.
  * 
  * @param boardId - Firestore document ID of the board
  * @param boardUpdate - The updated board data (can be partial)
@@ -209,62 +208,13 @@ export async function updateBoardById(
 
   const boardRef = doc(db, "boards", boardId);
   
-  // If the update doesn't contain items, just do a simple update
-  if (!boardUpdate.items) {
-    await updateDoc(boardRef, {
-      ...boardUpdate,
-      updatedAt: serverTimestamp(),
-    });
-    return;
-  }
-  
-  // For updates with items, we need to implement our smart merge strategy
-  // First get the current state of the board
-  const currentBoardSnap = await getDoc(boardRef);
-  if (!currentBoardSnap.exists()) {
-    throw new Error("Board not found");
-  }
-  
-  const currentBoard = currentBoardSnap.data();
-  const currentItems = currentBoard.items || [];
-  
-  // Create a map of current items by UID for easy lookup
-  const currentItemsMap = new Map();
-  for (const item of currentItems) {
-    if (item && item.uid) {
-      currentItemsMap.set(item.uid, item);
-    }
-  }
-  
-  // Process the updated items with our merge strategy
-  const updatedItems = (boardUpdate.items || []).map(updatedItem => {
-    // If this item doesn't exist in the current board, just use the updated version
-    if (!updatedItem.uid || !currentItemsMap.has(updatedItem.uid)) {
-      return updatedItem;
-    }
-    
-    const currentItem = currentItemsMap.get(updatedItem.uid);
-    
-    // Special case: If the current item is checked in but the update would uncheck it,
-    // preserve the checked-in status (prioritize positive check-ins)
-    if (currentItem.checkedIn === true && updatedItem.checkedIn === false) {
-      return {
-        ...updatedItem,
-        checkedIn: true // Preserve the checked-in status
-      };
-    }
-    
-    // Otherwise, use the updated item
-    return updatedItem;
-  });
-  
-  // Update the board with our merged items
+  // Always update 'updatedAt'
   await updateDoc(boardRef, {
     ...boardUpdate,
-    items: updatedItems,
     updatedAt: serverTimestamp(),
   });
 }
+
 /**
  * Subscribes to real-time updates for a board by ID.
  * Calls the callback with the latest board data on each change.
