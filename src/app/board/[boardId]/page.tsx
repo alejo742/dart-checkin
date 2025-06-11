@@ -132,6 +132,11 @@ export default function BoardPage() {
         e.preventDefault();
         setSearch(prev => prev + e.key);
       }
+      // if it is space, write space
+      else if (e.key === " ") {
+        e.preventDefault();
+        setSearch(prev => prev + " ");
+      }
       // if it is backspace
       else if (e.key === "Backspace") {
         e.preventDefault();
