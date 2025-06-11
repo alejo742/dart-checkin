@@ -47,14 +47,21 @@ export default function BoardTableView({
     
     // Search filter - search across ALL fields, not just columns
     const searchLower = search.toLowerCase().trim();
-    const matchSearch = searchLower === "" || Object.entries(item).some(([key, value]) => {
-      // Skip uid and internal fields
-      if (key === "uid") return false;
-      
-      // Convert value to string safely, handling null/undefined
-      const valueStr = value == null ? "" : String(value).toLowerCase();
-      return valueStr.includes(searchLower);
-    });
+
+    // split query into words
+    const searchWords = search.toLowerCase().split(" ");
+
+    // match with all properties except some
+    const matchSearch =
+      searchLower === "" ||
+      searchWords.some((word) =>
+        Object.entries(item)
+          .filter(([key]) => key !== "uid" && key !== "checkedIn")
+          .some(([_, value]) => {
+            const valueStr = value == null ? "" : String(value).toLowerCase();
+            return valueStr.includes(word); // Match individual word
+          })
+      );
     
     // Status filter
     const matchFilter =

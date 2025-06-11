@@ -29,12 +29,19 @@ export default function BoardPage() {
 
   // Filtering logic (for export and list view)
   const filteredItems = items.filter(item => {
-    const matchSearch = Object.entries(item)
-    .filter(([key]) => key !== "uid" && key !== "checkedIn")
-    .some(([_, value]) =>
-      typeof value === "string" &&
-      value.toLowerCase().includes(search.toLowerCase())
+    // split query into words
+    const searchWords = search.toLowerCase().split(" ");
+
+    // match with all properties except some
+    const matchSearch = searchWords.some(word =>
+      Object.entries(item)
+        .filter(([key]) => key !== "uid" && key !== "checkedIn")
+        .some(([_, value]) =>
+          typeof value === "string" &&
+          value.toLowerCase().includes(word.toLowerCase())
+        )
     );
+    // match if a filter is active
     const matchFilter =
       filter === "all"
         ? true
