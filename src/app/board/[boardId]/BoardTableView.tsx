@@ -31,6 +31,10 @@ export default function BoardTableView({
   const [boardNameEditing, setBoardNameEditing] = useState(false);
   const [editingRowUid, setEditingRowUid] = useState<string | null>(null);
   const [items, setItems] = useState<ItemType[]>(itemsInitial);
+  
+  // State for keyboard navigation and row focusing
+  const [focusedRowIndex, setFocusedRowIndex] = useState(0);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,6 +81,8 @@ export default function BoardTableView({
   // Reset to first page when filter changes
   useEffect(() => {
     setCurrentPage(1);
+    // Reset focused row when filter changes
+    setFocusedRowIndex(0);
   }, [search, filter]);
 
   // Calculate pagination values
@@ -93,6 +99,64 @@ export default function BoardTableView({
   const startIndex = (validCurrentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
   const currentPageRows = filteredDataRows.slice(startIndex, endIndex);
+
+    // Reset focused row when page changes
+    useEffect(() => {
+      setFocusedRowIndex(0);
+    }, [currentPage]);
+  
+    // Keyboard navigation effect
+    useEffect(() => {
+      // Set focus to the table to enable keyboard navigation
+      if (tableRef.current && filteredDataRows.length > 0) {
+        tableRef.current.focus();
+      }
+  
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Don't handle keys if we're editing an input
+        if (
+          document.activeElement instanceof HTMLInputElement &&
+          document.activeElement.type !== "checkbox"
+        ) {
+          if (e.key === "Enter") {
+            document.activeElement.blur(); // Remove focus from input
+          }
+          return;
+        }
+  
+        // Only handle keys when table is focused or a table element is focused
+        const isTableFocused = 
+          document.activeElement === tableRef.current || 
+          tableRef.current?.contains(document.activeElement);
+          
+        if (!isTableFocused) return;
+  
+        switch (e.key) {
+          case "ArrowDown":
+            e.preventDefault();
+            setFocusedRowIndex(prev => 
+              Math.min(prev + 1, currentPageRows.length - 1)
+            );
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            setFocusedRowIndex(prev => Math.max(prev - 1, 0));
+            break;
+          case "Enter":
+            e.preventDefault();
+            if (currentPageRows.length > 0 && focusedRowIndex >= 0) {
+              const focusedItem = currentPageRows[focusedRowIndex];
+              handleCheckinChange(focusedItem.uid, !focusedItem.checkedIn);
+            }
+            break;
+        }
+      };
+  
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+  }, [currentPageRows, focusedRowIndex]);
 
   const filteredDataRowsRef = useRef(filteredDataRows);
   filteredDataRowsRef.current = filteredDataRows;
@@ -130,11 +194,14 @@ export default function BoardTableView({
     };
     // Add the new row after the header (if header exists)
     const newItems = headerRow 
-      ? [headerRow, ...dataRows, newRow] 
-      : [...items, newRow];
+      ? [headerRow, newRow, ...dataRows] 
+      : [newRow, ...items];
     
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
+
+    // Focus the newly added row
+    setFocusedRowIndex(0);
   };
 
   const handleRemoveRow = (uid: string) => {
@@ -144,6 +211,11 @@ export default function BoardTableView({
     const newItems = items.filter((item) => item.uid !== uid);
     setItems(newItems);
     if (onSave) onSave(boardName, newItems);
+
+    // Adjust focused row if needed
+    if (focusedRowIndex >= currentPageRows.length - 1) {
+      setFocusedRowIndex(Math.max(0, currentPageRows.length - 2));
+    }
   };
 
   // Pagination controls
@@ -160,87 +232,74 @@ export default function BoardTableView({
     setCurrentPage(1); // Reset to first page when changing rows per page
   };
 
-  // Function to handle "check all visible rows"
-  const handleCheckAllVisible = () => {
-    const updatedItems = items.map(item => {
-      // Only update items that are in the filtered data rows
-      const isInFilteredRows = filteredDataRows.some(filtered => filtered.uid === item.uid);
-      if (isInFilteredRows) {
-        return { ...item, checkedIn: true };
-      }
-      return item;
-    });
-    
-    setItems(updatedItems);
-    if (onSave) onSave(boardName, updatedItems);
-  };
-
-  // Function to handle "uncheck all visible rows"
-  const handleUncheckAllVisible = () => {
-    const updatedItems = items.map(item => {
-      // Only update items that are in the filtered data rows
-      const isInFilteredRows = filteredDataRows.some(filtered => filtered.uid === item.uid);
-      if (isInFilteredRows) {
-        return { ...item, checkedIn: false };
-      }
-      return item;
-    });
-    
-    setItems(updatedItems);
-    if (onSave) onSave(boardName, updatedItems);
-  };
-
-  // Custom row renderer
+  // Custom row renderer with focused row handling
   const renderTableRows = () => {
-    return currentPageRows.map((item) => (
-      <tr key={item.uid} className={item.checkedIn ? "row-checked" : ""}>
-        {/* Checkbox column */}
-        <td style={{ width: "60px" }}>
-          <input
-            type="checkbox"
-            checked={!!item.checkedIn}
-            onChange={(e) => handleCheckinChange(item.uid, e.target.checked)}
-            aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
-          />
-        </td>
-        
-        {/* Data columns (skip first "Check" column) */}
-        {columns.slice(1).map((col) => (
-          <td key={col}>
+    return currentPageRows.map((item, index) => {
+      const isFocused = index === focusedRowIndex;
+      return (
+        <tr 
+          key={item.uid} 
+          className={`
+            ${item.checkedIn ? "row-checked" : ""}
+            ${isFocused ? "row-focused" : ""}
+          `}
+          onClick={() => setFocusedRowIndex(index)}
+          style={isFocused ? {
+            background: "rgba(59, 130, 246, 0.1)",
+            outline: "2px solid #3b82f6",
+          } : {}}
+        >
+          {/* Checkbox column */}
+          <td style={{ width: "60px" }}>
             <input
-              className="spreadsheet-cell-input"
-              value={item[col] ?? ""}
-              onFocus={() => setEditingRowUid(item.uid)}
-              onChange={(e) => handleCellChange(item.uid, col, e.target.value)}
-              onBlur={handleCellBlur}
-              aria-label={col}
-              placeholder={col}
+              type="checkbox"
+              checked={!!item.checkedIn}
+              onChange={(e) => handleCheckinChange(item.uid, e.target.checked)}
+              aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
             />
           </td>
-        ))}
-        
-        {/* Status column */}
-        <td style={{ width: "120px" }}>
-          <span className={item.checkedIn ? "status-green" : "status-red"}>
-            {item.checkedIn ? "Checked In" : "Not Checked In"}
-          </span>
-        </td>
-        
-        {/* Actions column */}
-        <td style={{ width: "100px" }}>
-          <button
-            className="spreadsheet-remove-row-btn"
-            aria-label="Remove Row"
-            title="Remove Row"
-            onClick={() => handleRemoveRow(item.uid)}
-            type="button"
-            tabIndex={0}
-          >
-            Remove
-          </button>
-        </td>
-      </tr>
-    ));
+          
+          {/* Data columns (skip first "Check" column) */}
+          {columns.slice(1).map((col) => (
+            <td key={col}>
+              <input
+                className="spreadsheet-cell-input"
+                value={item[col] ?? ""}
+                onFocus={() => {
+                  setEditingRowUid(item.uid);
+                  setFocusedRowIndex(index);
+                }}
+                onChange={(e) => handleCellChange(item.uid, col, e.target.value)}
+                onBlur={handleCellBlur}
+                aria-label={col}
+                placeholder={col}
+              />
+            </td>
+          ))}
+          
+          {/* Status column */}
+          <td style={{ width: "120px" }}>
+            <span className={item.checkedIn ? "status-green" : "status-red"}>
+              {item.checkedIn ? "Checked In" : "Not Checked In"}
+            </span>
+          </td>
+          
+          {/* Actions column */}
+          <td style={{ width: "100px" }}>
+            <button
+              className="spreadsheet-remove-row-btn"
+              aria-label="Remove Row"
+              title="Remove Row"
+              onClick={() => handleRemoveRow(item.uid)}
+              type="button"
+              tabIndex={0}
+            >
+              Remove
+            </button>
+          </td>
+        </tr>
+      );
+    });
   };
 
   // Calculate stats for pagination display
@@ -318,51 +377,32 @@ export default function BoardTableView({
         </div>
       </div>
       
-      {/* Bulk Actions Row */}
-      {totalRows > 0 && (
-        <div style={{ 
-          display: "flex", 
-          gap: "8px", 
-          marginBottom: "12px" 
-        }}>
-          <button
-            onClick={handleCheckAllVisible}
-            style={{
-              padding: "4px 12px",
-              borderRadius: "4px",
-              border: "1px solid #d1d5db",
-              background: "#f3f4f6",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            Check All Visible ({totalRows})
-          </button>
-          <button
-            onClick={handleUncheckAllVisible}
-            style={{
-              padding: "4px 12px",
-              borderRadius: "4px",
-              border: "1px solid #d1d5db",
-              background: "#f3f4f6",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            Uncheck All Visible ({totalRows})
-          </button>
-        </div>
-      )}
+      <div className="keyboard-instructions" style={{ 
+        marginBottom: "10px",
+        fontSize: "14px",
+        color: "#4b5563",
+        backgroundColor: "#f3f4f6",
+        padding: "8px 12px",
+        borderRadius: "4px"
+      }}>
+        <p>
+          <strong>Keyboard shortcuts:</strong> Use arrow keys ↑↓ to navigate rows. 
+          Press Enter to check/uncheck the focused row.
+        </p>
+      </div>
       
       <div style={{ overflowX: "auto" }}>
         <table
+          ref={tableRef}
           className="spreadsheet-table"
           style={{
             minWidth: `${(columns.length + 2) * 160}px`,
             tableLayout: "fixed",
             width: "100%",
-            borderCollapse: "collapse"
+            borderCollapse: "collapse",
+            outline: "none" // Remove default focus outline
           }}
+          tabIndex={0} // Make table focusable for keyboard navigation
         >
           <thead>
             <tr>
@@ -432,6 +472,7 @@ export default function BoardTableView({
                 disabled={currentPage === 1}
                 style={{
                   padding: "4px 12px",
+                  color: "#111827",
                   borderRadius: "4px",
                   border: "1px solid #d1d5db",
                   background: currentPage === 1 ? "#f3f4f6" : "white",
@@ -448,6 +489,7 @@ export default function BoardTableView({
                   padding: "4px 12px",
                   borderRadius: "4px",
                   border: "1px solid #d1d5db",
+                  color: "#111827",
                   background: currentPage === totalPages ? "#f3f4f6" : "white",
                   cursor: currentPage === totalPages ? "not-allowed" : "pointer",
                   opacity: currentPage === totalPages ? 0.5 : 1

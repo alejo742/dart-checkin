@@ -32,7 +32,7 @@ export default function BoardPage() {
     // split query into words
     const searchWords = search.toLowerCase().split(" ");
 
-    // match with all properties except some
+    // match with all properties except some //TODO: if matches both word queries, give priority
     const matchSearch = searchWords.some(word =>
       Object.entries(item)
         .filter(([key]) => key !== "uid" && key !== "checkedIn")
@@ -136,7 +136,8 @@ export default function BoardPage() {
         }
       }
 
-      if (e.key === "Escape") {
+      // if escape key or shift+backspace, clear search
+      if (e.key === "Escape" || (e.key === "Backspace" && e.shiftKey)) {
         setSearch("");
       }
       // if it is a character or number, write

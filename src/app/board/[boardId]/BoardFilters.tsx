@@ -7,9 +7,9 @@ export default function BoardFilters({
   return (
     <div className="board-filters">
       <input
-        className="board-search"
+        className="board-search focus"
         type="text"
-        placeholder="Search attendees/items..."
+        placeholder="Search, write now..."
         value={search}
         onChange={e => onSearch(e.target.value)}
       />
