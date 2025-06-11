@@ -119,10 +119,15 @@ export default function BoardPage() {
     return () => window.removeEventListener("click", handleClick);
   }, [showExportMenu]);
 
-  // automatically type-in on search bar whenever key pressed (when not focused on input)
+  // automatically type-in on search bar whenever key pressed (when not focused on input, except when focused on checkboxes)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return; // Ignore if input is focused
+      // if focused on input (not checkbox), return
+      if (e.target instanceof HTMLInputElement) {
+        if (e.target.type !== "checkbox") {
+          return;
+        }
+      }
 
       if (e.key === "Escape") {
         setSearch("");
