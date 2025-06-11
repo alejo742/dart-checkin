@@ -119,6 +119,29 @@ export default function BoardPage() {
     return () => window.removeEventListener("click", handleClick);
   }, [showExportMenu]);
 
+  // automatically type-in on search bar whenever key pressed (when not focused on input)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return; // Ignore if input is focused
+
+      if (e.key === "Escape") {
+        setSearch("");
+      }
+      // if it is a character or number, write
+      else if ((e.key.length === 1 && e.key.match(/^[a-zA-Z0-9]$/))) {
+        e.preventDefault();
+        setSearch(prev => prev + e.key);
+      }
+      // if it is backspace
+      else if (e.key === "Backspace") {
+        e.preventDefault();
+        setSearch(prev => prev.slice(0, -1));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   if (loading) {
     return <div style={{ padding: 32, textAlign: "center" }}>Loading...</div>;
   }
