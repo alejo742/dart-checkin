@@ -40,6 +40,12 @@ export default function BoardTableView({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
+  // Update local state when props change - this is key for real-time updates
+  useEffect(() => {
+    setBoardName(boardNameInitial);
+    setItems(itemsInitial);
+  }, [boardNameInitial, itemsInitial]);
+
   // Separate the header row (first row) from the data rows
   const headerRow = items.length > 0 ? items[0] : null;
   const dataRows = items.length > 0 ? items.slice(1) : [];
@@ -53,7 +59,7 @@ export default function BoardTableView({
     const searchLower = search.toLowerCase().trim();
 
     // split query into words
-    const searchWords = search.toLowerCase().split(" ");
+    const searchWords = searchLower ? search.toLowerCase().split(" ") : [];
 
     // match with all properties except some
     const matchSearch =
@@ -90,72 +96,74 @@ export default function BoardTableView({
   const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
   
   // Make sure currentPage is valid
-  const validCurrentPage = Math.min(totalPages, Math.max(1, currentPage));
-  if (validCurrentPage !== currentPage) {
-    setCurrentPage(validCurrentPage);
-  }
+  useEffect(() => {
+    const validCurrentPage = Math.min(totalPages, Math.max(1, currentPage));
+    if (validCurrentPage !== currentPage) {
+      setCurrentPage(validCurrentPage);
+    }
+  }, [currentPage, totalPages]);
   
   // Get current page of data
-  const startIndex = (validCurrentPage - 1) * rowsPerPage;
+  const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
   const currentPageRows = filteredDataRows.slice(startIndex, endIndex);
 
-    // Reset focused row when page changes
-    useEffect(() => {
-      setFocusedRowIndex(0);
-    }, [currentPage]);
+  // Reset focused row when page changes
+  useEffect(() => {
+    setFocusedRowIndex(0);
+  }, [currentPage]);
   
-    // Keyboard navigation effect
-    useEffect(() => {
-      // Set focus to the table to enable keyboard navigation
-      if (tableRef.current && filteredDataRows.length > 0) {
-        tableRef.current.focus();
+  // Keyboard navigation effect
+  useEffect(() => {
+    // Set focus to the table to enable keyboard navigation
+    if (tableRef.current && filteredDataRows.length > 0) {
+      tableRef.current.focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle keys if we're editing an input
+      if (
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.type !== "checkbox"
+      ) {
+        if (e.key === "Enter") {
+          document.activeElement.blur(); // Remove focus from input
+        }
+        return;
       }
-  
-      const handleKeyDown = (e: KeyboardEvent) => {
-        // Don't handle keys if we're editing an input
-        if (
-          document.activeElement instanceof HTMLInputElement &&
-          document.activeElement.type !== "checkbox"
-        ) {
-          if (e.key === "Enter") {
-            document.activeElement.blur(); // Remove focus from input
+
+      // Only handle keys when table is focused or a table element is focused
+      const isTableFocused = 
+        document.activeElement === tableRef.current || 
+        tableRef.current?.contains(document.activeElement);
+        
+      if (!isTableFocused) return;
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setFocusedRowIndex(prev => 
+            Math.min(prev + 1, currentPageRows.length - 1)
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusedRowIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (currentPageRows.length > 0 && focusedRowIndex >= 0) {
+            const focusedItem = currentPageRows[focusedRowIndex];
+            handleCheckinChange(focusedItem.uid, !focusedItem.checkedIn);
           }
-          return;
-        }
-  
-        // Only handle keys when table is focused or a table element is focused
-        const isTableFocused = 
-          document.activeElement === tableRef.current || 
-          tableRef.current?.contains(document.activeElement);
-          
-        if (!isTableFocused) return;
-  
-        switch (e.key) {
-          case "ArrowDown":
-            e.preventDefault();
-            setFocusedRowIndex(prev => 
-              Math.min(prev + 1, currentPageRows.length - 1)
-            );
-            break;
-          case "ArrowUp":
-            e.preventDefault();
-            setFocusedRowIndex(prev => Math.max(prev - 1, 0));
-            break;
-          case "Enter":
-            e.preventDefault();
-            if (currentPageRows.length > 0 && focusedRowIndex >= 0) {
-              const focusedItem = currentPageRows[focusedRowIndex];
-              handleCheckinChange(focusedItem.uid, !focusedItem.checkedIn);
-            }
-            break;
-        }
-      };
-  
-      window.addEventListener("keydown", handleKeyDown);
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-      };
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [currentPageRows, focusedRowIndex]);
 
   const filteredDataRowsRef = useRef(filteredDataRows);
