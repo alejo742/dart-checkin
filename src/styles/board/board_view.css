@@ -337,11 +337,9 @@ input[type="checkbox"]:hover {
   position: relative;
   z-index: 1;
 }
-
 .row-focused td {
   background-color: rgba(59, 130, 246, 0.1);
 }
-
 .row-focused input {
   background-color: rgba(255, 255, 255, 0.8);
 }

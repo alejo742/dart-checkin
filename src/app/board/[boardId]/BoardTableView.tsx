@@ -115,11 +115,6 @@ export default function BoardTableView({
   
   // Keyboard navigation effect
   useEffect(() => {
-    // Set focus to the table to enable keyboard navigation
-    if (tableRef.current && filteredDataRows.length > 0) {
-      tableRef.current.focus();
-    }
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't handle keys if we're editing an input
       if (
@@ -132,12 +127,7 @@ export default function BoardTableView({
         return;
       }
 
-      // Only handle keys when table is focused or a table element is focused
-      const isTableFocused = 
-        document.activeElement === tableRef.current || 
-        tableRef.current?.contains(document.activeElement);
-        
-      if (!isTableFocused) return;
+      // TODO: handle keys, conditionally return
 
       switch (e.key) {
         case "ArrowDown":
@@ -262,7 +252,10 @@ export default function BoardTableView({
             <input
               type="checkbox"
               checked={!!item.checkedIn}
-              onChange={(e) => handleCheckinChange(item.uid, e.target.checked)}
+              onChange={(e) => {
+                e.stopPropagation(); // Stop event from bubbling up
+                handleCheckinChange(item.uid, e.target.checked);
+              }}
               aria-label={item.checkedIn ? "Checked In" : "Not Checked In"}
             />
           </td>
@@ -273,11 +266,23 @@ export default function BoardTableView({
               <input
                 className="spreadsheet-cell-input"
                 value={item[col] ?? ""}
-                onFocus={() => {
+                onClick={
+                  (e) => {
+                    const input = e.target as HTMLInputElement;
+                    input.focus();
+                    setEditingRowUid(item.uid);
+                    setFocusedRowIndex(index);
+                  }
+                }
+                onFocus={(e) => {
+                  e.stopPropagation(); // Stop event from bubbling up
                   setEditingRowUid(item.uid);
                   setFocusedRowIndex(index);
                 }}
-                onChange={(e) => handleCellChange(item.uid, col, e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation(); // Stop event from bubbling up
+                  handleCellChange(item.uid, col, e.target.value);
+                }}
                 onBlur={handleCellBlur}
                 aria-label={col}
                 placeholder={col}
@@ -298,7 +303,10 @@ export default function BoardTableView({
               className="spreadsheet-remove-row-btn"
               aria-label="Remove Row"
               title="Remove Row"
-              onClick={() => handleRemoveRow(item.uid)}
+              onClick={(e) => {
+                e.stopPropagation(); // Stop event from bubbling up
+                handleRemoveRow(item.uid);
+              }}
               type="button"
               tabIndex={0}
             >
