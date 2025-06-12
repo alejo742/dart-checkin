@@ -127,8 +127,6 @@ export default function BoardTableView({
         return;
       }
 
-      // TODO: handle keys, conditionally return
-
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
